@@ -6230,6 +6230,11 @@ body:has(.login-view) {
     color: var(--text-main);
 }
 
+.card-menu-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
 .card-dropdown-menu {
     position: absolute;
     top: 100%;
