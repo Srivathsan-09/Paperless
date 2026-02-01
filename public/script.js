@@ -1216,9 +1216,17 @@ async function openCategory(id, isBackgroundRefresh = false) {
                                     ${exp.notes ? `<span class="history-notes">${exp.notes}</span>` : ''}
                                 </div>
                             </div>
-                            <div class="history-right">
+                            <div class="history-right" style="position: relative;">
                                 <span class="history-amount">₹${exp.amount.toLocaleString()}</span>
-                                <button class="delete-btn" onclick="deleteCategoryEntry('${exp._id}', '${id}')">×</button>
+                                <div class="card-menu-container" style="position: relative; flex-shrink: 0; margin-left: 0.5rem; top: auto; right: auto;">
+                                     <button class="card-menu-btn" style="opacity: 1;" onclick="toggleHistoryMenu(event, '${exp._id}')">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
+                                    </button>
+                                    <div id="history-menu-${exp._id}" class="card-dropdown-menu" style="right: 0; top: 100%; width: 140px;">
+                                        <button onclick="handleEditEntry(event, '${exp._id}', '${id}')">Edit</button>
+                                        <button class="delete-option" onclick="handleDeleteEntry(event, '${exp._id}', '${exp.itemName || exp.subCategory}', '${id}')">Delete</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     `).join('') : `<p style="text-align: center; color: var(--text-muted); padding: 1.5rem 0;">No recent expenses in ${cat.name}.</p>`}
@@ -1595,7 +1603,7 @@ function handleSummaryClick(parentName, categoryId, itemName) {
 
 
 
-async function renderEBBillForm(container, categoryId, customBackAction = null) {
+async function renderEBBillForm(container, categoryId, customBackAction = null, existingEntry = null) {
     const onBack = customBackAction || 'closeModule()';
     // Unified Header Update
     HeaderManager.update({
@@ -1604,24 +1612,40 @@ async function renderEBBillForm(container, categoryId, customBackAction = null) 
         hideMonthSelector: true
     });
 
+    const units = (existingEntry && existingEntry.notes && existingEntry.notes.match(/Units: (\d+)/)?.[1]) || '';
+    const noteClean = existingEntry ? existingEntry.notes.replace(/\s*\|\s*Units: \d+/, '') : '';
+
     const customFieldsHTML = `
         <div class="form-group">
             <label>Units Consumed (Optional)</label>
-            <input type="number" id="ebUnits" placeholder="e.g. 150">
+            <input type="number" id="ebUnits" placeholder="e.g. 150" value="${units}">
         </div>
     `;
 
+    // Pre-fill values
+    const amountVal = existingEntry ? existingEntry.amount : '';
+    const dateVal = existingEntry ? existingEntry.date.split('T')[0] : new Date().toISOString().split('T')[0];
+
     container.innerHTML = getUniversalFormHTML({
-        title: 'EB Bill Entry',
+        title: existingEntry ? 'Edit EB Bill' : 'EB Bill Entry',
         onBack: onBack,
         itemNameLabel: 'Item Name',
         itemNameValue: 'EB Bill',
+        amountValue: amountVal,
+        dateValue: dateVal,
+        notesValue: noteClean,
         customFieldsHTML,
-        historyContainerId: 'ebHistory',
+        historyContainerId: existingEntry ? null : 'ebHistory',
         showItemName: false
     });
 
-    renderSubcategoryHistory(document.getElementById('ebHistory'), 'EB Bill', categoryId);
+    if (existingEntry && existingEntry.paymentMode) {
+        setTimeout(() => selectPaymentOption(existingEntry.paymentMode), 0);
+    }
+
+    if (!existingEntry) {
+        renderSubcategoryHistory(document.getElementById('ebHistory'), 'EB Bill', categoryId);
+    }
 
     setupUniversalForm(async (entry) => {
         const units = document.getElementById('ebUnits').value;
@@ -1631,23 +1655,37 @@ async function renderEBBillForm(container, categoryId, customBackAction = null) 
         entry.notes = (entry.notes || '') +
             (units ? ` | Units: ${units}` : '');
 
-        const success = await addEntry(entry);
-        if (success) {
-            const histContainer = document.getElementById('ebHistory');
-            if (histContainer) {
-                await renderSubcategoryHistory(histContainer, 'EB Bill', categoryId);
-                document.getElementById('universalForm').reset();
-                const today = new Date().toISOString().split('T')[0];
-                if (document.getElementById('formDate')) document.getElementById('formDate').value = today;
-            } else {
-                renderEBBillForm(container, categoryId);
+        if (existingEntry) {
+            try {
+                await fetchAPI(`/api/entries/${existingEntry._id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(entry)
+                });
+                showToast('Entry updated successfully', 'success');
+                closeModule();
+                renderDashboard();
+            } catch (err) {
+                showToast('Update failed: ' + err.message, 'error');
+            }
+        } else {
+            const success = await addEntry(entry);
+            if (success) {
+                const histContainer = document.getElementById('ebHistory');
+                if (histContainer) {
+                    await renderSubcategoryHistory(histContainer, 'EB Bill', categoryId);
+                    document.getElementById('universalForm').reset();
+                    const today = new Date().toISOString().split('T')[0];
+                    if (document.getElementById('formDate')) document.getElementById('formDate').value = today;
+                } else {
+                    renderEBBillForm(container, categoryId);
+                }
             }
         }
     });
 }
 
 
-async function renderGenericForm(container, subName, categoryId, customBackAction = null, hideHistory = false) {
+async function renderGenericForm(container, subName, categoryId, customBackAction = null, hideHistory = false, existingEntry = null) {
     const onBack = customBackAction || 'closeModule()';
     // Unified Header Update
     HeaderManager.update({
@@ -1659,32 +1697,43 @@ async function renderGenericForm(container, subName, categoryId, customBackActio
 
     const isDescriptive = subName === 'Small Spends' || subName === 'General Expense' || subName === 'Medical' || subName === 'Newspaper';
 
-    // Check for mandatory exceptions (Goldchit, Lic)
-    // User requested "for all categories make it as optional"
-    const isMandatory = false;
-
     let customFieldsHTML = '';
     if (subName === 'Medical') {
         customFieldsHTML = `
             <div class="form-group">
                 <label>Hospital / Doctor (Optional)</label>
-                <input type="text" id="medHospital" placeholder="e.g. City Hospital">
+                <input type="text" id="medHospital" placeholder="e.g. City Hospital" value="${(existingEntry && existingEntry.notes && existingEntry.notes.match(/\(Hosp: (.*)\)/)?.[1]) || ''}">
             </div>
         `;
     }
 
+    // Pre-fill values
+    const amountVal = existingEntry ? existingEntry.amount : '';
+    const dateVal = existingEntry ? existingEntry.date.split('T')[0] : new Date().toISOString().split('T')[0];
+    const notesVal = existingEntry ? existingEntry.notes.replace(/\s*\(Hosp: .*\)/, '') : ''; // Remove hosp tag if present
+    const itemNameVal = existingEntry ? (existingEntry.itemName || '') : '';
+
     container.innerHTML = getUniversalFormHTML({
-        title: `${subName} Entry`,
+        title: existingEntry ? `Edit ${subName}` : `${subName} Entry`,
         onBack: onBack,
+        amountValue: amountVal,
+        dateValue: dateVal,
+        notesValue: notesVal,
+        itemNameValue: itemNameVal,
         itemNameLabel: isDescriptive ? 'Description' : 'Item Name',
         itemNamePlaceholder: isDescriptive ? 'What was this for?' : 'e.g. Bread, Car service',
         customFieldsHTML,
-        historyContainerId: hideHistory ? null : 'genHistory',
+        historyContainerId: (hideHistory || existingEntry) ? null : 'genHistory', // Hide history in edit mode
         historyHeader: `Recent Expenses in ${subName}`,
-        isItemNameMandatory: false // Force optional globally
+        isItemNameMandatory: false
     });
 
-    if (!hideHistory) {
+    // Handle Payment Mode Pre-selection
+    if (existingEntry && existingEntry.paymentMode) {
+        setTimeout(() => selectPaymentOption(existingEntry.paymentMode), 0);
+    }
+
+    if (!hideHistory && !existingEntry) {
         renderSubcategoryHistory(document.getElementById('genHistory'), subName, categoryId);
     }
 
@@ -1705,26 +1754,44 @@ async function renderGenericForm(container, subName, categoryId, customBackActio
             if (hosp) entry.notes = (entry.notes ? entry.notes + ' ' : '') + `(Hosp: ${hosp})`;
         }
 
+        if (existingEntry) {
+            // UPDATE LOGIC
+            try {
+                await fetchAPI(`/api/entries/${existingEntry._id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(entry)
+                });
+                showToast('Entry updated successfully', 'success');
+                closeModule();
 
+                // Refresh
+                if (STATE.view === 'subcategories' && STATE.activeCategory) {
+                    openCategory(STATE.activeCategory, true);
+                } else {
+                    renderDashboard();
+                }
+            } catch (err) {
+                showToast('Update failed: ' + err.message, 'error');
+            }
 
-        const success = await addEntry(entry);
-        if (success) {
-            // SMART REFRESH: Only update the history list
-            const histContainer = document.getElementById('genHistory');
-            if (histContainer && !hideHistory) {
-                await renderSubcategoryHistory(histContainer, subName, categoryId);
+        } else {
+            // CREATE LOGIC
+            const success = await addEntry(entry);
+            if (success) {
+                // SMART REFRESH: Only update the history list
+                const histContainer = document.getElementById('genHistory');
+                if (histContainer && !hideHistory) {
+                    await renderSubcategoryHistory(histContainer, subName, categoryId);
 
-                // Clear form values manually
-                document.getElementById('universalForm').reset();
-                // Restore defaults/dates if needed (retain date, reset amount)
-                const today = new Date().toISOString().split('T')[0];
-                if (document.getElementById('formDate')) document.getElementById('formDate').value = today;
-                // Keep payment mode as is or reset? User said "make cash as default only if user doesnt select either".
-                // BUT if they just added an entry, maybe they doing batch? 
-                // Actually, standard behavior is reset form.
+                    // Clear form values manually
+                    document.getElementById('universalForm').reset();
+                    // Restore defaults/dates if needed (retain date, reset amount)
+                    const today = new Date().toISOString().split('T')[0];
+                    if (document.getElementById('formDate')) document.getElementById('formDate').value = today;
 
-            } else {
-                renderGenericForm(container, subName, categoryId, onBack, hideHistory);
+                } else {
+                    renderGenericForm(container, subName, categoryId, onBack, hideHistory);
+                }
             }
         }
     });
@@ -3259,3 +3326,96 @@ window.addEventListener('click', (e) => {
         if (!d.contains(e.target)) d.classList.remove('active');
     });
 });
+
+// --- HISTORY CONTEXT MENU HELPERS ---
+
+window.toggleHistoryMenu = function (event, id) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    const menuId = `history-menu-${id}`;
+    const menu = document.getElementById(menuId);
+
+    // Close all other open menus first
+    document.querySelectorAll('.card-dropdown-menu').forEach(m => {
+        if (m.id !== menuId) m.style.display = 'none';
+    });
+
+    if (menu) {
+        const isVisible = menu.style.display === 'flex';
+        menu.style.display = isVisible ? 'none' : 'flex';
+    }
+};
+
+// Close menus when clicking outside
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.card-menu-btn') && !e.target.closest('.card-dropdown-menu')) {
+        document.querySelectorAll('.card-dropdown-menu').forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
+});
+
+
+window.handleDeleteEntry = async function (event, entryId, itemName, categoryId) {
+    if (event) event.stopPropagation();
+
+    // Close menu
+    const menu = document.getElementById(`history-menu-${entryId}`);
+    if (menu) menu.style.display = 'none';
+
+    const confirmed = await showConfirm(`Do you want to delete this entry?`);
+
+    if (confirmed) {
+        try {
+            await fetchAPI(`/api/entries/${entryId}`, { method: 'DELETE' });
+            showToast('Deleted successfully', 'success');
+
+            if (STATE.view === 'subcategories' && STATE.activeCategory) {
+                openCategory(STATE.activeCategory, true);
+            } else {
+                renderDashboard();
+            }
+
+        } catch (err) {
+            showToast('Delete failed: ' + err.message, 'error');
+        }
+    }
+};
+
+window.handleEditEntry = async function (event, entryId, categoryId) {
+    if (event) event.stopPropagation();
+
+    // Close menu
+    const menu = document.getElementById(`history-menu-${entryId}`);
+    if (menu) menu.style.display = 'none';
+
+    try {
+        const entry = await fetchAPI(`/api/entries/${entryId}`);
+        if (!entry) throw new Error("Entry not found");
+
+        const subName = entry.subCategory || entry.itemName || 'Entry';
+
+        // Ensure module overlay is active
+        let container = document.getElementById('panelContent');
+        const overlay = document.getElementById('moduleOverlay');
+        if (overlay) overlay.classList.add('active');
+
+        // Route to correct form
+        if (subName === 'EB Bill') {
+            await renderEBBillForm(container, categoryId, null, entry);
+        } else if (entry.type === 'milk' || subName === 'Milk') {
+            const d = new Date(entry.date);
+            const dateParam = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            openMilkFormByDate(dateParam, entry._id);
+        } else {
+            await renderGenericForm(container, subName, categoryId, null, false, entry);
+        }
+
+    } catch (err) {
+        console.error(err);
+        showToast('Failed to load entry for editing', 'error');
+    }
+};
