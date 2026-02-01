@@ -158,6 +158,21 @@ router.get('/', verifyToken, async (req, res) => {
     }
 });
 
+// @route   GET /api/entries/:id
+// @desc    Get a specific entry
+router.get('/:id', verifyToken, async (req, res) => {
+    try {
+        const entry = await Entry.findOne({ _id: req.params.id, userId: req.user._id });
+        if (!entry) {
+            return res.status(404).json({ message: 'Entry not found' });
+        }
+        res.json(entry);
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error');
+    }
+});
+
 // @route   DELETE /api/entries/:id
 // @desc    Delete a specific entry
 router.delete('/:id', verifyToken, async (req, res) => {

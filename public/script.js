@@ -1219,13 +1219,9 @@ async function openCategory(id, isBackgroundRefresh = false) {
                             <div class="history-right" style="position: relative;">
                                 <span class="history-amount">₹${exp.amount.toLocaleString()}</span>
                                 <div class="card-menu-container" style="position: relative; flex-shrink: 0; margin-left: 0.5rem; top: auto; right: auto;">
-                                     <button class="card-menu-btn" style="opacity: 1;" onclick="toggleHistoryMenu(event, '${exp._id}')">
+                                     <button class="card-menu-btn" style="opacity: 1;" onclick="toggleHistoryMenu(event, '${exp._id}', '${id}', '${(exp.itemName || exp.subCategory || 'New Entry').replace(/'/g, "\\'")}')">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
                                     </button>
-                                    <div id="history-menu-${exp._id}" class="card-dropdown-menu" style="right: 0; top: 100%; width: 140px;">
-                                        <button onclick="handleEditEntry(event, '${exp._id}', '${id}')">Edit</button>
-                                        <button class="delete-option" onclick="handleDeleteEntry(event, '${exp._id}', '${exp.itemName || exp.subCategory}', '${id}')">Delete</button>
-                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1847,13 +1843,9 @@ async function renderSubcategoryHistory(container, subName, categoryId) {
                         <div class="history-right" style="position: relative;">
                             <span class="history-amount">₹${h.amount.toLocaleString()}</span>
                             <div class="card-menu-container" style="position: relative; flex-shrink: 0; margin-left: 0.5rem; top: auto; right: auto;">
-                                 <button class="card-menu-btn" style="opacity: 1;" onclick="toggleHistoryMenu(event, '${h._id}')">
+                                 <button class="card-menu-btn" style="opacity: 1;" onclick="toggleHistoryMenu(event, '${h._id}', '${categoryId}', '${(h.itemName || subName).replace(/'/g, "\\'")}')">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
                                 </button>
-                                <div id="history-menu-${h._id}" class="card-dropdown-menu" style="right: 0; top: 100%; width: 140px;">
-                                    <button onclick="handleEditEntry(event, '${h._id}', '${categoryId}')">Edit</button>
-                                    <button class="delete-option" onclick="handleDeleteEntry(event, '${h._id}', '${subName}', '${categoryId}')">Delete</button>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -3337,32 +3329,69 @@ window.addEventListener('click', (e) => {
 
 // --- HISTORY CONTEXT MENU HELPERS ---
 
-window.toggleHistoryMenu = function (event, id) {
+window.toggleHistoryMenu = function (event, entryId, categoryId, itemName) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
     }
 
-    const menuId = `history-menu-${id}`;
-    const menu = document.getElementById(menuId);
+    const btn = event.currentTarget;
+    const rect = btn.getBoundingClientRect();
 
-    // Close all other open menus first
-    document.querySelectorAll('.card-dropdown-menu').forEach(m => {
-        if (m.id !== menuId) m.style.display = 'none';
-    });
+    // Singleton Menu
+    let menu = document.getElementById('global-history-menu');
 
-    if (menu) {
-        const isVisible = menu.style.display === 'flex';
-        menu.style.display = isVisible ? 'none' : 'flex';
+    // Toggle logic
+    if (menu && menu.dataset.triggerId === entryId && menu.style.display !== 'none') {
+        menu.remove();
+        return;
     }
+
+    // Remove existing if any (different ID)
+    if (menu) menu.remove();
+
+    menu = document.createElement('div');
+    menu.id = 'global-history-menu';
+    menu.className = 'card-dropdown-menu'; // Reuse class for styling
+    menu.style.position = 'fixed';
+    menu.style.zIndex = '9999';
+    menu.style.width = '140px';
+    document.body.appendChild(menu);
+
+    // Update Content
+    const safeItemName = (itemName || '').replace(/'/g, "\\'");
+
+    menu.innerHTML = `
+        <button onclick="handleEditEntry(event, '${entryId}', '${categoryId}')">Edit</button>
+        <button class="delete-option" onclick="handleDeleteEntry(event, '${entryId}', '${safeItemName}', '${categoryId}')">Delete</button>
+    `;
+
+    menu.dataset.triggerId = entryId;
+    menu.style.display = 'flex';
+    menu.style.overflow = 'visible'; // Ensure no clipping
+
+    // Calculate Position (Right-aligned to button)
+    let left = rect.right - 140;
+    let top = rect.bottom + 5;
+
+    // Mobile safety
+    if (left < 10) left = 10;
+
+    // Y safety (pop up if near bottom)
+    if (top + 100 > window.innerHeight) {
+        top = rect.top - 80;
+    }
+
+    menu.style.top = `${top}px`;
+    menu.style.left = `${left}px`;
 };
 
 // Close menus when clicking outside
 document.addEventListener('click', (e) => {
-    if (!e.target.closest('.card-menu-btn') && !e.target.closest('.card-dropdown-menu')) {
-        document.querySelectorAll('.card-dropdown-menu').forEach(menu => {
-            menu.style.display = 'none';
-        });
+    // Check if click is outside the menu AND outside any trigger button
+    if (!e.target.closest('.card-menu-btn') && !e.target.closest('#global-history-menu')) {
+        const menu = document.getElementById('global-history-menu');
+        if (menu) menu.remove();
     }
 });
 
@@ -3370,9 +3399,8 @@ document.addEventListener('click', (e) => {
 window.handleDeleteEntry = async function (event, entryId, itemName, categoryId) {
     if (event) event.stopPropagation();
 
-    // Close menu
-    const menu = document.getElementById(`history-menu-${entryId}`);
-    if (menu) menu.style.display = 'none';
+    const menu = document.getElementById('global-history-menu');
+    if (menu) menu.remove();
 
     const confirmed = await showConfirm(`Do you want to delete this entry?`);
 
@@ -3396,9 +3424,8 @@ window.handleDeleteEntry = async function (event, entryId, itemName, categoryId)
 window.handleEditEntry = async function (event, entryId, categoryId) {
     if (event) event.stopPropagation();
 
-    // Close menu
-    const menu = document.getElementById(`history-menu-${entryId}`);
-    if (menu) menu.style.display = 'none';
+    const menu = document.getElementById('global-history-menu');
+    if (menu) menu.remove();
 
     try {
         const entry = await fetchAPI(`/api/entries/${entryId}`);
