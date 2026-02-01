@@ -147,16 +147,16 @@ body::after {
 }
 
 body::before {
-    width: 600px;
-    height: 600px;
+    width: min(600px, 50vw);
+    height: min(600px, 50vw);
     background: var(--primary);
     top: -100px;
     left: -100px;
 }
 
 body::after {
-    width: 500px;
-    height: 500px;
+    width: min(500px, 45vw);
+    height: min(500px, 45vw);
     background: var(--accent);
     bottom: -100px;
     right: -100px;

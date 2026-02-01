@@ -107,8 +107,9 @@ function loadState() {
         STATE.categories = parsed.categories || STATE.categories;
         STATE.subcategories = parsed.subcategories || STATE.subcategories;
         STATE.isLoggedIn = parsed.isLoggedIn || false;
-        if (parsed.selectedMonth !== undefined) STATE.selectedMonth = parsed.selectedMonth;
-        if (parsed.selectedYear !== undefined) STATE.selectedYear = parsed.selectedYear;
+        // semantic fix: Always default to current month/year on reload to ensure "auto update"
+        // if (parsed.selectedMonth !== undefined) STATE.selectedMonth = parsed.selectedMonth;
+        // if (parsed.selectedYear !== undefined) STATE.selectedYear = parsed.selectedYear;
     }
 }
 
@@ -1491,17 +1492,41 @@ function renderSummaryList() {
     if (filter === 'UPI') {
         filteredEntries = filteredEntries.filter(e => e.paymentMode === 'UPI');
     } else if (filter === 'Cash') {
-        // Includes 'Cash' explicitly or undefined/null (legacy/default)
         filteredEntries = filteredEntries.filter(e => e.paymentMode === 'Cash' || !e.paymentMode);
     }
 
     const grandTotal = filteredEntries.reduce((sum, e) => sum + e.amount, 0);
 
-    // Map parent categories for clicks
-    filteredEntries.forEach(e => {
-        const cat = STATE.categories.find(c => c._id === e.categoryId || c.id === e.categoryId);
-        const parent = e.parentCategory || (cat ? cat.parentCategory || cat.name : 'Other');
-        e.categoryName = parent;
+    // --- Aggregation Logic for Milk ---
+    let milkEntries = filteredEntries.filter(e => e.itemName === 'Milk' || e.subCategory === 'Milk' || e.type === 'milk');
+    let otherEntries = filteredEntries.filter(e => !(e.itemName === 'Milk' || e.subCategory === 'Milk' || e.type === 'milk'));
+
+    let totalMilkAmount = milkEntries.reduce((sum, e) => sum + e.amount, 0);
+    let finalDisplayList = [...otherEntries];
+
+    // Create synthetic entry if milk exists (and filter allows it)
+    if (totalMilkAmount > 0) {
+        const aggregatedMilk = {
+            _id: 'aggregated-milk',
+            itemName: 'Milk',
+            amount: totalMilkAmount,
+            date: null, // Marker for aggregation
+            categoryId: (milkEntries[0] && milkEntries[0].categoryId) || 'daily',
+            categoryName: 'Daily Expenses',
+            paymentMode: 'Cash', // Default assumption or mixed
+            isAggregated: true
+        };
+        // User Requirement: "it should be in first"
+        finalDisplayList.unshift(aggregatedMilk);
+    }
+
+    // Parent category mapping for standard entries
+    finalDisplayList.forEach(e => {
+        if (!e.isAggregated) {
+            const cat = STATE.categories.find(c => c._id === e.categoryId || c.id === e.categoryId);
+            const parent = e.parentCategory || (cat ? cat.parentCategory || cat.name : 'Other');
+            e.categoryName = parent;
+        }
     });
 
     const contentArea = document.getElementById('ssContentArea');
@@ -1527,26 +1552,41 @@ function renderSummaryList() {
                     </div>
                 </div>
                 <div class="ss-history-box">
-                    ${filteredEntries.length > 0 ? filteredEntries.map(e => {
-            const dateObj = new Date(e.date);
-            const day = dateObj.getDate();
-            const month = dateObj.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+                    ${finalDisplayList.length > 0 ? finalDisplayList.map(e => {
+
+            let dateHTML = '';
+
+            if (e.isAggregated) {
+                // For aggregated Milk, hide date strictly
+                dateHTML = `
+                    <div class="ss-date-pill" style="opacity: 0;">
+                         <span class="d">-</span>
+                         <span class="m">-</span>
+                    </div>
+                 `;
+            } else {
+                const dateObj = new Date(e.date);
+                const day = dateObj.getDate();
+                const month = dateObj.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+                dateHTML = `
+                    <div class="ss-date-pill">
+                        <span class="d">${day}</span>
+                        <span class="m">${month}</span>
+                    </div>
+                 `;
+            }
 
             // Default to Cash if missing
             const mode = e.paymentMode || 'Cash';
 
             return `
                             <div class="ss-history-row" style="cursor: pointer;" onclick="handleSummaryClick('${(e.categoryName || '').replace(/'/g, "\\'")}', '${e.categoryId}', '${(e.itemName || '').replace(/'/g, "\\'")}')">
-                                <div class="ss-date-pill">
-                                    <span class="d">${day}</span>
-                                    <span class="m">${month}</span>
-                                </div>
+                                ${dateHTML}
                                 <div style="display: flex; flex-direction: column; flex: 1; margin-left: 1rem;">
                                     <div style="display: flex; align-items: center;">
                                         <span class="ss-item-name">${e.itemName || e.notes || 'Expense'}</span>
                                         <span class="payment-mode-badge ${mode.toLowerCase()}">${mode}</span>
                                     </div>
-                                    <!-- Optional: Show category name below if needed, but user asked for badge box -->
                                 </div>
                                 <span class="ss-item-amount">₹${e.amount.toLocaleString()}</span>
                             </div>
@@ -3354,7 +3394,7 @@ window.toggleHistoryMenu = function (event, entryId, categoryId, itemName) {
     menu.id = 'global-history-menu';
     menu.className = 'card-dropdown-menu'; // Reuse class for styling
     menu.style.position = 'fixed';
-    menu.style.zIndex = '9999';
+    menu.style.zIndex = '40000';
     menu.style.width = '140px';
     document.body.appendChild(menu);
 
