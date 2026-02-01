@@ -1844,9 +1844,17 @@ async function renderSubcategoryHistory(container, subName, categoryId) {
                                 ${h.notes ? `<span class="history-notes">${h.notes}</span>` : ''}
                             </div>
                         </div>
-                        <div class="history-right">
+                        <div class="history-right" style="position: relative;">
                             <span class="history-amount">₹${h.amount.toLocaleString()}</span>
-                            <button class="delete-btn" onclick="deleteEntry('${h._id}', '${subName}', '${categoryId}')">×</button>
+                            <div class="card-menu-container" style="position: relative; flex-shrink: 0; margin-left: 0.5rem; top: auto; right: auto;">
+                                 <button class="card-menu-btn" style="opacity: 1;" onclick="toggleHistoryMenu(event, '${h._id}')">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
+                                </button>
+                                <div id="history-menu-${h._id}" class="card-dropdown-menu" style="right: 0; top: 100%; width: 140px;">
+                                    <button onclick="handleEditEntry(event, '${h._id}', '${categoryId}')">Edit</button>
+                                    <button class="delete-option" onclick="handleDeleteEntry(event, '${h._id}', '${subName}', '${categoryId}')">Delete</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `).join('')}
