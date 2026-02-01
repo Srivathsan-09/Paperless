@@ -245,6 +245,26 @@ const HeaderManager = {
     }
 };
 
+// Scroll Header Hiding Logic
+let lastScrollTop = 0;
+window.addEventListener('scroll', () => {
+    const isMobile = window.innerWidth <= 768;
+    if (!isMobile) return;
+
+    const header = document.querySelector('.app-header');
+    if (!header) return;
+
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+    // Hide on scroll down (if scrolled past 50px), Show on scroll up
+    if (scrollTop > lastScrollTop && scrollTop > 50) {
+        header.classList.add('header-hidden');
+    } else {
+        header.classList.remove('header-hidden');
+    }
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; // For Mobile or negative scrolling
+}, { passive: true });
+
 // --- UI HELPERS ---
 function showToast(message, type = 'info') {
     let container = document.getElementById('toastContainer');
@@ -980,7 +1000,7 @@ async function renderDashboard() {
                 <div class="category-card" onclick="openCategory('${cat._id || cat.id}')">
                      <div class="card-menu-container">
                         <button class="card-menu-btn" onclick="toggleCardMenu(event, '${cat._id || cat.id}')">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="12" r="1.2"></circle><circle cx="12" cy="12" r="1.2"></circle><circle cx="18" cy="12" r="1.2"></circle></svg>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5"></circle><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="18" r="1.5"></circle></svg>
                         </button>
                         <div id="menu-${cat._id || cat.id}" class="card-dropdown-menu">
                             <button onclick="editCategory(event, '${cat._id || cat.id}', '${cat.name.replace(/'/g, "\\'")}')">Rename</button>
