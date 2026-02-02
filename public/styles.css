@@ -171,7 +171,7 @@ body::after {
 /* Base Header Styling - Desktop (Locked) */
 .app-header {
     height: 65px;
-    padding: 0 4rem;
+    padding: 0 1.5rem;
     display: flex;
     align-items: center;
     background: transparent;
@@ -785,6 +785,11 @@ h3,
         /* Optional cap to prevent too wide spread? Or just 100% of container */
         margin: 0 auto;
         padding: 0 1rem;
+    }
+
+    /* Widen sidebar on desktop */
+    .side-drawer {
+        width: 350px;
     }
 
     .category-card {
