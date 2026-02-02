@@ -3514,3 +3514,34 @@ window.handleEditEntry = async function (event, entryId, categoryId) {
         showToast('Failed to load entry for editing', 'error');
     }
 };
+// --- SIDE DRAWER LOGIC ---
+
+function openDrawer() {
+    const drawer = document.getElementById('sideDrawer');
+    const overlay = document.getElementById('drawerOverlay');
+    if (drawer) drawer.classList.add('open');
+    if (overlay) overlay.classList.add('active');
+}
+
+function closeDrawer() {
+    const drawer = document.getElementById('sideDrawer');
+    const overlay = document.getElementById('drawerOverlay');
+    if (drawer) drawer.classList.remove('open');
+    if (overlay) overlay.classList.remove('active');
+}
+
+// Drawer Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    const menuBtn = document.getElementById('menuBtn');
+    const closeBtn = document.getElementById('closeDrawerBtn');
+    const overlay = document.getElementById('drawerOverlay');
+
+    if (menuBtn) menuBtn.addEventListener('click', openDrawer);
+    if (closeBtn) closeBtn.addEventListener('click', closeDrawer);
+    if (overlay) overlay.addEventListener('click', closeDrawer);
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeDrawer();
+    });
+});

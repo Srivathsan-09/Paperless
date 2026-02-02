@@ -18,7 +18,7 @@
 <body>
     <script>
         // Immediate Theme Check to prevent flash
-        (function() {
+        (function () {
             const savedTheme = localStorage.getItem('PAPERLESS_THEME') || 'light-theme';
             document.body.classList.add(savedTheme);
         })();
@@ -28,17 +28,11 @@
             <div class="header-main-row">
                 <div class="header-left">
                     <div id="headerBackBtn"></div>
-                    <div class="month-selector-trigger" id="monthPickerTrigger">
-                        <span id="currentMonthYear">December 2025</span>
-                        <svg width="16" height="16">
-                            <use href="#icon-chevron-down"></use>
+                    <button class="icon-btn" id="menuBtn" aria-label="Open Menu">
+                        <svg width="24" height="24">
+                            <use href="#icon-menu"></use>
                         </svg>
-                    </div>
-                </div>
-                <div class="header-center">
-                    <h1 class="logo">Paperless</h1>
-                </div>
-                <div class="header-right">
+                    </button>
                     <button class="theme-btn" id="themeToggle" aria-label="Toggle Theme">
                         <svg class="sun-icon" width="24" height="24" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -58,14 +52,47 @@
                             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
                         </svg>
                     </button>
-                    <button class="logout-btn" onclick="logout()" style="margin-left: 0.5rem;">
-                        Logout
-                    </button>
+                </div>
+                <div class="header-center">
+                    <h1 class="logo">Paperless</h1>
+                </div>
+                <div class="header-right">
+                    <div class="month-selector-trigger" id="monthPickerTrigger">
+                        <span id="currentMonthYear">December 2025</span>
+                        <svg width="16" height="16">
+                            <use href="#icon-chevron-down"></use>
+                        </svg>
+                    </div>
                 </div>
             </div>
             <div id="headerSubContent" class="header-sub-row"></div>
             <div id="headerNavRow" class="header-nav-row"></div>
         </header>
+
+        <!-- Side Drawer & Overlay -->
+        <div id="drawerOverlay" class="drawer-overlay"></div>
+        <aside id="sideDrawer" class="side-drawer">
+            <div class="drawer-header">
+                <h2>Menu</h2>
+                <button class="icon-btn close-drawer-btn" id="closeDrawerBtn">
+                    <svg width="24" height="24">
+                        <use href="#icon-x"></use>
+                    </svg>
+                </button>
+            </div>
+            <div class="drawer-content">
+                <nav class="drawer-nav">
+                    <!-- Future Items Placeholder -->
+                    <!-- <a href="#" class="drawer-item">Profile</a> -->
+                    <!-- <a href="#" class="drawer-item">Settings</a> -->
+                </nav>
+                <div class="drawer-footer">
+                    <button class="logout-btn drawer-logout" onclick="logout()">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </aside>
 
         <main id="mainContent" class="view-container">
             <!-- Content will be dynamically injected here -->
@@ -172,6 +199,15 @@
         </symbol>
         <symbol id="icon-chevron-left" viewBox="0 0 24 24">
             <path d="m15 18-6-6 6-6" />
+        </symbol>
+        <symbol id="icon-menu" viewBox="0 0 24 24">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+        </symbol>
+        <symbol id="icon-x" viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
         </symbol>
     </svg>
 
