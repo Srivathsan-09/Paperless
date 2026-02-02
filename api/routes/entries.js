@@ -78,6 +78,17 @@ router.get('/', verifyToken, async (req, res) => {
 
         if (categoryId) {
             query.categoryId = categoryId;
+
+            const { month } = req.query;
+            if (month) {
+                const parts = month.split('-');
+                const yearNum = parseInt(parts[0]);
+                const monthNum = parseInt(parts[1]) - 1;
+                const startDate = new Date(Date.UTC(yearNum, monthNum, 1));
+                const endDate = new Date(Date.UTC(yearNum, monthNum + 1, 0, 23, 59, 59, 999));
+                query.date = { $gte: startDate, $lte: endDate };
+            }
+
             const entries = await Entry.find(query).sort({ date: -1 }).limit(10);
             return res.json(entries);
         }
