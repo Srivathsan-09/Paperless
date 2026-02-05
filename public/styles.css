@@ -6526,6 +6526,7 @@ body:has(.login-view) {
         /* Small buffer */
     }
 }
+
 /* --- ABOUT PAGE STYLES --- */
 
 .about-view {
@@ -6539,10 +6540,10 @@ body:has(.login-view) {
     max-width: 800px;
     width: 100%;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
     display: flex;
     flex-direction: column;
-    gap: 2.5rem;
+    gap: 1.5rem;
     animation: fadeIn 0.4s ease-out;
 }
 
@@ -6662,7 +6663,7 @@ body:has(.login-view) {
 
 .analytics-view {
     width: 100%;
-    padding: 2rem 1.5rem;
+    padding: 0.5rem 1.5rem 2rem 1.5rem;
 }
 
 .analytics-container {
@@ -6671,7 +6672,7 @@ body:has(.login-view) {
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1rem;
     animation: fadeIn 0.4s ease-out;
 }
 
@@ -6733,8 +6734,10 @@ body:has(.login-view) {
 }
 
 .chart-header .trend-up {
-    color: var(--error); /* High spending is 'bad' strictly speaking, or neutral. Let's use neutral or red */
+    color: var(--error);
+    /* High spending is 'bad' strictly speaking, or neutral. Let's use neutral or red */
 }
+
 .chart-header .trend-down {
     color: var(--success);
 }
@@ -6782,7 +6785,7 @@ body:has(.login-view) {
     .analytics-view {
         padding: 1rem;
     }
-    
+
     .analytics-header-row h2 {
         font-size: 1.5rem;
     }
@@ -6794,7 +6797,7 @@ body:has(.login-view) {
     .chart-canvas-wrapper {
         height: 250px;
     }
-    
+
     .chart-canvas-wrapper.wide {
         height: 280px;
     }
@@ -6802,13 +6805,12 @@ body:has(.login-view) {
     .about-container {
         padding: 1rem;
     }
-    
+
     .about-header h2 {
         font-size: 1.75rem;
     }
-    
+
     .about-card {
         padding: 1.5rem;
     }
 }
-
