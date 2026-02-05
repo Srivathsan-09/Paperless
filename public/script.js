@@ -1548,7 +1548,7 @@ async function openCategory(id, isBackgroundRefresh = false) {
 
     main.innerHTML = `
         <div class="category-overhaul-wrapper">
-        <div class="overhaul-header" style="margin-bottom: 0.5rem;">
+        <div class="overhaul-header" style="${window.innerWidth <= 768 ? 'margin-bottom: 0.5rem;' : ''}">
             <div class="overhaul-tabs-row">
                 <div class="header-left-col" style="display: flex; justify-content: flex-start; min-width: 44px;">
                     <!-- Desktop Back Button -->
@@ -1596,7 +1596,7 @@ async function openCategory(id, isBackgroundRefresh = false) {
             </div>
         </div>
 
-        <div class="recent-expenses-container">
+        <div class="recent-expenses-container overhaul-v2">
             <div class="recent-expenses-header">Recent Expenses in ${cat.name}</div>
             <div class="history-scroller">
                 <div class="history-list">
