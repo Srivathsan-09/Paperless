@@ -189,7 +189,9 @@ body::after {
     align-items: center;
     justify-content: center;
     padding: 8px;
-    /* Touch target */
+    width: 40px;
+    /* Standardize width */
+    height: 40px;
     border-radius: 8px;
     transition: var(--transition);
 }
@@ -320,21 +322,29 @@ body::after {
 
 /* Ensure Back Button doesn't break header-left */
 #headerBackBtn {
-    margin-right: -0.5rem;
-    /* Pull closer to edge */
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    /* Standardize width to match menuBtn slot */
 }
 
 #headerBackBtn .back-btn-v3 {
     background: transparent !important;
     padding: 8px !important;
     border: none !important;
-    color: var(--text-main) !important;
+    color: #3b82f6 !important;
+    /* Vibrant Blue as requested */
     border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #headerBackBtn .back-btn-v3:hover {
-    background: var(--primary-light) !important;
-    color: var(--primary) !important;
+    background: rgba(59, 130, 246, 0.1) !important;
+    color: #2563eb !important;
 }
 
 #headerBackBtn .back-btn-v3 svg {
