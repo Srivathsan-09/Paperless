@@ -897,6 +897,373 @@ function setupUniversalForm(onSave, onDelete = null) {
 }
 
 
+
+// --- ABOUT PAGE ---
+function renderAbout() {
+    STATE.view = 'about';
+    STATE.activeCategory = null;
+
+    // Update Header
+    HeaderManager.update({
+        showBack: true,
+        onBack: 'renderDashboard',
+        hideMonthSelector: true
+    });
+
+    const main = document.getElementById('mainContent');
+    main.className = 'view-container about-view';
+    main.innerHTML = `
+        <div class="about-container">
+            <div class="about-header">
+                <div class="about-icon-large">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </div>
+                <h2>About Paperless</h2>
+                <p>Digital Expense Tracking, Simplified.</p>
+            </div>
+
+            <div class="about-content">
+                <div class="about-card">
+                    <h3>What is Paperless?</h3>
+                    <p>Paperless is a simple, digital expense tracker designed to replace traditional paper/diary-based expense tracking. It offers a clean, distraction-free interface to manage your monthly expenses efficiently.</p>
+                </div>
+
+                <div class="about-card">
+                    <h3>Our Inspiration</h3>
+                    <p>Inspired by parents and families who meticulously maintain their monthly expenses in notebooks and diaries, Paperless aims to bring that discipline into the digital age—making the process organized, effortless, and insightful.</p>
+                </div>
+
+                <div class="about-card">
+                    <h3>Key Features</h3>
+                    <ul class="feature-list">
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                            Category-based expense tracking
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            Monthly summaries & history
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                            Analytics & insights
+                        </li>
+                        <li>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+                            Minimal, distraction-free UI
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="about-card vision-card">
+                    <h3>Our Vision</h3>
+                    <p>To help users understand where their money goes and build better financial habits through simple, accessible technology.</p>
+                </div>
+            </div>
+            
+            <div class="about-footer">
+                <p>&copy; ${new Date().getFullYear()} Paperless. All rights reserved.</p>
+            </div>
+        </div>
+    `;
+}
+
+// --- ANALYTICS PAGE ---
+async function renderAnalytics() {
+    STATE.view = 'analytics';
+    STATE.activeCategory = null;
+
+    // Update Header (Show Month Selector)
+    const isMobile = window.innerWidth <= 768;
+    HeaderManager.update({
+        showBack: true,
+        onBack: 'renderDashboard',
+        hideMonthSelector: false // Always show month selector for analytics
+    });
+
+    const main = document.getElementById('mainContent');
+    main.className = 'view-container analytics-view';
+
+    // Loading State
+    main.innerHTML = `
+        <div class="loading-state-container" style="height: 60vh; display:flex; flex-direction:column; align-items:center; justify-content:center; color: var(--text-muted);">
+             <svg class="spinner" viewBox="0 0 50 50" style="width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 16px;">
+                <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
+            </svg>
+             <p>Analyzing expenses...</p>
+        </div>
+    `;
+
+    try {
+        // 1. Fetch Data
+        // Current Month
+        const currentMonthStr = `${STATE.selectedYear}-${String(STATE.selectedMonth + 1).padStart(2, '0')}`;
+        const currentMonthData = await fetchAPI(`/api/entries?month=${currentMonthStr}`);
+
+        // Previous Month
+        let prevM = STATE.selectedMonth - 1;
+        let prevY = STATE.selectedYear;
+        if (prevM < 0) { prevM = 11; prevY--; }
+        const prevMonthStr = `${prevY}-${String(prevM + 1).padStart(2, '0')}`;
+        const prevMonthData = await fetchAPI(`/api/entries?month=${prevMonthStr}`);
+
+        // 2. Process Data
+
+        // Chart 1: Monthly Comparison
+        const currentTotal = currentMonthData.reduce((sum, e) => sum + e.amount, 0);
+        const prevTotal = prevMonthData.reduce((sum, e) => sum + e.amount, 0);
+
+        // Chart 2: Category Distribution (Current Month)
+        // Need to map IDs to Names if necessary, but fetch API usually populates names or we have STATE.categories
+        // Wait, entries might have categoryName or we look it up.
+        // Let's ensure we have categories loaded
+        if (STATE.categories.length === 0) await fetchCategories();
+
+        const categoryStats = {};
+        currentMonthData.forEach(e => {
+            // Priority: categoryName -> itemName (for Milk) -> subCategory -> "Other"
+            // Actually better to use parent Category for the Pie chart as per requirement "Category-wise Expense Distribution"
+
+            let catName = 'Other';
+            if (e.itemName === 'Milk' || e.type === 'milk') catName = 'Milk';
+            else if (e.parentCategory) catName = e.parentCategory;
+            else if (e.categoryId) {
+                const cat = STATE.categories.find(c => c._id === e.categoryId || c.id === e.categoryId);
+                if (cat) catName = cat.parentCategory || cat.name;
+            }
+
+            // Normalize
+            if (!catName) catName = 'Other';
+
+            if (!categoryStats[catName]) categoryStats[catName] = 0;
+            categoryStats[catName] += e.amount;
+        });
+
+        // Chart 3: Spending Trend (Current Month)
+        const daysInMonth = new Date(STATE.selectedYear, STATE.selectedMonth + 1, 0).getDate();
+        const dailyTrend = new Array(daysInMonth).fill(0);
+
+        currentMonthData.forEach(e => {
+            const d = new Date(e.date).getDate(); // 1-31
+            if (d >= 1 && d <= daysInMonth) {
+                dailyTrend[d - 1] += e.amount;
+            }
+        });
+
+        // 3. Render Structure
+        const currentMonthName = MONTHS[STATE.selectedMonth];
+        const prevMonthName = MONTHS[prevM];
+
+        // Empty State Handler
+        if (currentMonthData.length === 0 && prevMonthData.length === 0) {
+            main.innerHTML = `
+                <div class="analytics-empty-state">
+                    <div class="empty-icon">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                    </div>
+                    <h3>No Data Available</h3>
+                    <p>There are no expenses recorded for ${currentMonthName} or ${prevMonthName}.</p>
+                    <button class="action-btn primary" onclick="renderDashboard()">Go to Dashboard</button>
+                </div>
+            `;
+            return;
+        }
+
+        main.innerHTML = `
+            <div class="analytics-container">
+                <div class="analytics-header-row">
+                    <h2>Analytics & Insights</h2>
+                    <p class="subtitle">Overview for ${currentMonthName} ${STATE.selectedYear}</p>
+                </div>
+
+                <div class="charts-grid">
+                    <!-- Monthly Comparison -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Monthly Comparison</h3>
+                            <p>Total Spent: <span class="${currentTotal > prevTotal ? 'trend-up' : 'trend-down'}">₹${currentTotal.toLocaleString()}</span></p>
+                        </div>
+                        <div class="chart-canvas-wrapper">
+                            <canvas id="comparisonChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Category Distribution -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Expense Distribution</h3>
+                            <p>By Category</p>
+                        </div>
+                        <div class="chart-canvas-wrapper">
+                            <canvas id="distributionChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Daily Trend -->
+                    <div class="chart-card full-width">
+                        <div class="chart-header">
+                            <h3>Spending Trend</h3>
+                            <p>Daily breakdown for ${currentMonthName}</p>
+                        </div>
+                        <div class="chart-canvas-wrapper wide">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 4. Initialize Charts
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        font: { family: 'Outfit', size: 12 },
+                        boxWidth: 12,
+                        padding: 15,
+                        color: document.body.classList.contains('dark-theme') ? '#9ca3af' : '#64748b'
+                    }
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    backgroundColor: document.body.classList.contains('dark-theme') ? '#1e293b' : '#ffffff',
+                    titleColor: document.body.classList.contains('dark-theme') ? '#f1f5f9' : '#0f172a',
+                    bodyColor: document.body.classList.contains('dark-theme') ? '#cbd5e1' : '#334155',
+                    borderColor: document.body.classList.contains('dark-theme') ? '#334155' : '#e2e8f0',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: {
+                        label: function (context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(context.parsed.y);
+                            } else if (context.parsed !== null) {
+                                // For Pie charts where data is parsed differently
+                                label += new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(context.parsed);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            }
+        };
+
+        const textColor = document.body.classList.contains('dark-theme') ? '#cbd5e1' : '#64748b';
+        const gridColor = document.body.classList.contains('dark-theme') ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+
+        // Chart 1: Comparison
+        new Chart(document.getElementById('comparisonChart'), {
+            type: 'bar',
+            data: {
+                labels: [prevMonthName, currentMonthName],
+                datasets: [{
+                    label: 'Total Expenses',
+                    data: [prevTotal, currentTotal],
+                    backgroundColor: [
+                        'rgba(148, 163, 184, 0.7)', // Slate for previous
+                        'rgba(99, 102, 241, 0.8)'   // Primary for current
+                    ],
+                    borderRadius: 8,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: { ...commonOptions.plugins, legend: { display: false } }, // Hide legend for simple bar
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor },
+                        ticks: { color: textColor }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: textColor }
+                    }
+                }
+            }
+        });
+
+        // Chart 2: Distribution
+        const catLabels = Object.keys(categoryStats);
+        const catValues = Object.values(categoryStats);
+
+        // Dynamic Colors
+        const palette = [
+            '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+            '#ec4899', '#06b6d4', '#84cc16', '#f97316', '#64748b'
+        ];
+
+        new Chart(document.getElementById('distributionChart'), {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    data: catValues,
+                    backgroundColor: palette.slice(0, catLabels.length),
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    legend: { display: true, position: 'bottom', labels: { ...commonOptions.plugins.legend.labels, boxWidth: 10 } }
+                }
+            }
+        });
+
+        // Chart 3: Trend
+        new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: {
+                labels: Array.from({ length: daysInMonth }, (_, i) => i + 1),
+                datasets: [{
+                    label: 'Daily Spending',
+                    data: dailyTrend,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4, // Smooth curve
+                    pointRadius: 2,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor },
+                        ticks: { color: textColor }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: textColor, maxTicksLimit: 10 } // Limit x-axis labels
+                    }
+                }
+            }
+        });
+
+    } catch (e) {
+        console.error("Analytics Error:", e);
+        main.innerHTML = `<div class="error-state"><p>Failed to load analytics data.</p><button onclick="renderAnalytics()">Retry</button></div>`;
+    }
+}
+
 async function renderDashboard() {
     STATE.view = 'dashboard';
     STATE.activeCategory = null;
@@ -2787,6 +3154,8 @@ function setMonth(m) {
     } else if (STATE.view === 'milk') {
         const container = document.getElementById('categoryToolContainer') || document.getElementById('panelContent');
         if (container) renderMilkTracker(container);
+    } else if (STATE.view === 'analytics') {
+        renderAnalytics();
     }
 
     // Also refresh side panel if active

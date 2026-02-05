@@ -85,9 +85,27 @@
             </div>
             <div class="drawer-content">
                 <nav class="drawer-nav">
-                    <!-- Future Items Placeholder -->
-                    <!-- <a href="#" class="drawer-item">Profile</a> -->
-                    <!-- <a href="#" class="drawer-item">Settings</a> -->
+                    <button class="drawer-item" onclick="renderDashboard(); closeDrawer()">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" style="margin-right: 12px;">
+                            <use href="#icon-home"></use>
+                        </svg>
+                        Dashboard
+                    </button>
+                    <button class="drawer-item" onclick="renderAnalytics(); closeDrawer()">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" style="margin-right: 12px;">
+                            <use href="#icon-pie-chart"></use>
+                        </svg>
+                        Analytics
+                    </button>
+                    <button class="drawer-item" onclick="renderAbout(); closeDrawer()">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round" style="margin-right: 12px;">
+                            <use href="#icon-info"></use>
+                        </svg>
+                        About Paperless
+                    </button>
                 </nav>
                 <div class="drawer-footer">
                     <button class="logout-btn drawer-logout" onclick="logout()">
@@ -211,6 +229,15 @@
         <symbol id="icon-x" viewBox="0 0 24 24">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
+        </symbol>
+        <symbol id="icon-info" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </symbol>
+        <symbol id="icon-pie-chart" viewBox="0 0 24 24">
+            <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+            <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
         </symbol>
     </svg>
 
