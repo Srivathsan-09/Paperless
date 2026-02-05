@@ -320,7 +320,27 @@ body::after {
 
 /* Ensure Back Button doesn't break header-left */
 #headerBackBtn {
-    margin-right: 0.5rem;
+    margin-right: -0.5rem;
+    /* Pull closer to edge */
+}
+
+#headerBackBtn .back-btn-v3 {
+    background: transparent !important;
+    padding: 8px !important;
+    border: none !important;
+    color: var(--text-main) !important;
+    border-radius: 50%;
+}
+
+#headerBackBtn .back-btn-v3:hover {
+    background: var(--primary-light) !important;
+    color: var(--primary) !important;
+}
+
+#headerBackBtn .back-btn-v3 svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2.5;
 }
 
 .header-main-row {
@@ -1875,7 +1895,7 @@ textarea:focus {
 }
 
 #headerBackBtn {
-    display: none !important;
+    margin-right: 0.5rem;
 }
 
 .overhaul-header {
