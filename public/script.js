@@ -204,6 +204,16 @@ const HeaderManager = {
         if (logo) logo.style.display = 'block';
         if (monthTrigger) monthTrigger.style.visibility = 'visible';
 
+        // Toggle Menu Button visibility based on Back Button presence on Mobile
+        const menuBtn = document.getElementById('menuBtn');
+        if (menuBtn) {
+            if (isMobile && config.showBack) {
+                menuBtn.style.display = 'none';
+            } else {
+                menuBtn.style.display = 'flex';
+            }
+        }
+
         // Helper to show rows only on mobile
         const safeShow = (row, html) => {
             if (isMobile && row && html) {
@@ -1556,10 +1566,7 @@ async function openCategory(id, isBackgroundRefresh = false) {
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
                         Back
                     </button>
-                    <!-- Mobile Back Button (In Flow, matching Milk) -->
-                    <button class="icon-btn mobile-only" onclick="renderDashboard()" style="color: var(--primary) !important; padding: 0;">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                    </button>
+                    <!-- Mobile Back Button Removed (Now in main header) -->
                 </div>
                 <div class="header-center-col" style="flex: 1;">
                     <!-- Title Removed as per request -->
@@ -2459,10 +2466,7 @@ async function renderMilkTracker(container, searchRange = null, page = 1) {
                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
                              Back
                         </button>
-                        <!-- Mobile Back Button (In Flow) -->
-                         <button class="icon-btn mobile-only" onclick="renderDashboard()" style="color: var(--primary) !important; padding: 0;">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                        </button>
+                        <!-- Mobile Back Button Removed (Now in main header) -->
                     </div>
 
                     <div class="header-center-col" style="flex: 1;">
