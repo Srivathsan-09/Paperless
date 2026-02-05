@@ -753,16 +753,18 @@ body::after {
         /* Move content up even more */
     }
 
-    .view-container.compact-view .recent-expenses-container.overhaul-v2 {
+    /* Standardized Recent Expenses Box (Savings & Miscellaneous) */
+    .recent-expenses-container.overhaul-v2 {
+        min-height: 400px;
+        /* Force minimum height for empty states */
         max-height: 400px;
-        /* Reduced height to fit screen */
         display: flex;
         flex-direction: column;
     }
 
-    .view-container.compact-view .recent-expenses-container.overhaul-v2 .history-scroller {
+    .recent-expenses-container.overhaul-v2 .history-scroller {
         height: 280px !important;
-        /* Fixed height to force scroller */
+        /* Fixed height to force internal scrolling */
         overflow-y: auto !important;
     }
 }
