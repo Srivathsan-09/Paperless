@@ -743,10 +743,11 @@ body::after {
 
     /* COMPACT VIEW (Savings & Miscellaneous) */
     .view-container.compact-view {
-        padding-top: 2rem !important;
-        /* drastically reduced from 4rem */
+        /* Header is ~65px fixed. Content must start below it. */
+        /* Previously 2rem (32px) was too small (hidden), or 4rem (64px) was default. */
+        /* We want TIGHT spacing below header. */
+        padding-top: 85px !important;
         max-width: 1600px;
-        /* Optional: Keep it tighter if desired */
     }
 
     .view-container.compact-view .overhaul-header {

@@ -1419,12 +1419,7 @@ async function openCategory(id, isBackgroundRefresh = false) {
         STATE.activeSubcategory = null;
     }
 
-    const main = document.getElementById('mainContent');
-    if (id === 'savings' || id === 'miscellaneous' || id === 'Savings' || id === 'Miscellaneous') {
-        if (main) main.classList.add('compact-view');
-    } else {
-        if (main) main.classList.remove('compact-view');
-    }
+    // COMPACT VIEW TOGGLE REMOVED - Applied only on success now
 
     // Standardize IDs for special categories
     if (id === 'miscellaneous') {
@@ -1455,6 +1450,13 @@ async function openCategory(id, isBackgroundRefresh = false) {
             cat = categories.find(c => c.id === id || c._id === id);
             STATE.categories = categories;
         } catch (e) { console.error(e); }
+    }
+
+    // Force-find or Create Cat for Special IDs if missing
+    if (!cat) {
+        if (id === 'miscellaneous') cat = { name: 'Miscellaneous', id: 'miscellaneous', _id: 'miscellaneous', icon: 'more-horizontal' };
+        else if (id === 'savings') cat = { name: 'Savings', id: 'savings', _id: 'savings', icon: 'more-horizontal' };
+        else if (id === 'milk') cat = { name: 'Milk', id: 'milk', type: 'milk', icon: 'truck' };
     }
 
     if (!cat) return;
@@ -1537,7 +1539,9 @@ async function openCategory(id, isBackgroundRefresh = false) {
     if (main) {
         main.classList.remove('dashboard-view');
         main.classList.remove('milk-view');
-        // Redundant safety check for compact view if logic above failed (unlikely)
+        main.classList.remove('dashboard-view');
+        main.classList.remove('milk-view');
+        // Apply Compact View
         if (cat.name === 'Savings' || cat.name === 'Miscellaneous') main.classList.add('compact-view');
         else main.classList.remove('compact-view');
     }
