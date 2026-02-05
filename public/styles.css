@@ -754,15 +754,16 @@ body::after {
     }
 
     .view-container.compact-view .recent-expenses-container.overhaul-v2 {
-        min-height: 450px;
-        /* Increased height as requested */
+        max-height: 400px;
+        /* Reduced height to fit screen */
         display: flex;
         flex-direction: column;
     }
 
     .view-container.compact-view .recent-expenses-container.overhaul-v2 .history-scroller {
-        flex: 1;
-        min-height: 350px;
+        height: 280px !important;
+        /* Fixed height to force scroller */
+        overflow-y: auto !important;
     }
 }
 
