@@ -1475,7 +1475,7 @@ async function openCategory(id, isBackgroundRefresh = false) {
     STATE.view = 'subcategories';
 
 
-    // main variable already defined above
+    const main = document.getElementById('mainContent');
 
 
     // SPECIAL CASE: If it's Milk, render directly to mainContent (Full Screen)
