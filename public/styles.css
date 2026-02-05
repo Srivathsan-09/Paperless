@@ -733,6 +733,32 @@ body::after {
         /* Force wider cards */
         box-sizing: border-box;
     }
+
+    /* Reduce vertical gap for Analytics & About on Desktop */
+    .view-container.analytics-view,
+    .view-container.about-view {
+        padding-top: 0.5rem !important;
+        /* Minimized gap */
+    }
+
+    /* COMPACT VIEW (Savings & Miscellaneous) */
+    .view-container.compact-view {
+        padding-top: 2rem !important;
+        /* drastically reduced from 4rem */
+        max-width: 1600px;
+        /* Optional: Keep it tighter if desired */
+    }
+
+    .view-container.compact-view .overhaul-header {
+        margin-bottom: 0.5rem !important;
+        /* Reduced from 1rem */
+    }
+
+    .view-container.compact-view .category-title {
+        margin-bottom: 0 !important;
+        font-size: 1.8rem;
+        /* Ensure distinct size */
+    }
 }
 
 @media (max-width: 768px) {
@@ -6539,8 +6565,7 @@ body:has(.login-view) {
 .about-container {
     max-width: 800px;
     width: 100%;
-    margin: -1.5rem auto 0;
-    /* Pull up */
+    margin: 0 auto;
     padding: 0.5rem 1rem;
     display: flex;
     flex-direction: column;
@@ -6666,8 +6691,6 @@ body:has(.login-view) {
 .analytics-view {
     width: 100%;
     padding: 0 1.5rem 2rem 1.5rem;
-    margin-top: -1.5rem;
-    /* Pull up */
 }
 
 .analytics-container {

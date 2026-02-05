@@ -915,7 +915,6 @@ function renderAbout() {
     main.innerHTML = `
         <div class="about-container">
             <div class="about-header">
-                <h2>About Paperless</h2>
                 <p>Digital Expense Tracking, Simplified.</p>
             </div>
 
@@ -1265,6 +1264,7 @@ async function renderDashboard() {
     STATE.activeSubcategory = null;
     const main = document.getElementById('mainContent');
     // REMOVED immediate class reset to prevent jump
+    if (main) main.classList.remove('compact-view');
 
     // Unified Header Update
     HeaderManager.update({ showBack: false });
@@ -1419,6 +1419,13 @@ async function openCategory(id, isBackgroundRefresh = false) {
         STATE.activeSubcategory = null;
     }
 
+    const main = document.getElementById('mainContent');
+    if (id === 'savings' || id === 'miscellaneous' || id === 'Savings' || id === 'Miscellaneous') {
+        if (main) main.classList.add('compact-view');
+    } else {
+        if (main) main.classList.remove('compact-view');
+    }
+
     // Standardize IDs for special categories
     if (id === 'miscellaneous') {
         const existing = STATE.categories.find(c => c.id === 'miscellaneous');
@@ -1466,7 +1473,8 @@ async function openCategory(id, isBackgroundRefresh = false) {
     STATE.view = 'subcategories';
 
 
-    const main = document.getElementById('mainContent');
+    // main variable already defined above
+
 
     // SPECIAL CASE: If it's Milk, render directly to mainContent (Full Screen)
     if (cat.name === 'Milk' || cat.type === 'milk') {
@@ -1529,6 +1537,9 @@ async function openCategory(id, isBackgroundRefresh = false) {
     if (main) {
         main.classList.remove('dashboard-view');
         main.classList.remove('milk-view');
+        // Redundant safety check for compact view if logic above failed (unlikely)
+        if (cat.name === 'Savings' || cat.name === 'Miscellaneous') main.classList.add('compact-view');
+        else main.classList.remove('compact-view');
     }
 
     main.innerHTML = `
