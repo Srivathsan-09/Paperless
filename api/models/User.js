@@ -14,6 +14,7 @@ const userSchema = new mongoose.Schema({
     name: {
         type: String,
         required: true,
+        index: true, // Index for searching users
     },
     email: {
         type: String,
@@ -21,6 +22,7 @@ const userSchema = new mongoose.Schema({
         unique: true,
         lowercase: true,
         trim: true,
+        index: true, // Index for searching users
     },
     password: {
         type: String,
@@ -32,9 +34,15 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
+    isAdmin: {
+        type: Boolean,
+        default: false, // Set to true for admin users only
+        index: true,
+    },
     createdAt: {
         type: Date,
         default: Date.now,
+        index: true, // Index for sorting users
     },
     lastLogin: {
         type: Date,

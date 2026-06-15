@@ -4,27 +4,30 @@ const entrySchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: true,
+        index: true, // Index for user-specific queries
     },
     categoryId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
-        required: true
+        required: true,
+        index: true, // Index for category-specific queries
     },
     amount: {
-        type: Number, // This is totalCost
-        required: true
+        type: Number,
+        required: true,
     },
     date: {
         type: Date,
-        required: true
+        required: true,
+        index: true, // Index for date-range queries
     },
     itemName: {
         type: String,
-        required: true
+        required: true,
     },
     notes: {
-        type: String
+        type: String,
     },
     // Milk/Generic specific
     quantity: {
@@ -47,5 +50,10 @@ const entrySchema = new mongoose.Schema({
         default: 'Cash'
     }
 }, { timestamps: true });
+
+// Compound indexes for efficient queries
+entrySchema.index({ userId: 1, date: -1 });
+entrySchema.index({ userId: 1, categoryId: 1, date: -1 });
+entrySchema.index({ userId: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Entry', entrySchema);
