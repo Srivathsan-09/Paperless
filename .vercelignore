@@ -1,0 +1,50 @@
+# Exclude files that shouldn't be deployed as serverless functions
+
+# Build and development files
+node_modules/
+.git/
+.gitignore
+*.log
+npm-debug.log
+yarn-error.log
+.DS_Store
+
+# Documentation
+README.md
+*.md
+docs/
+
+# Local development
+.env.local
+.env.*.local
+.vercel/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Migration and utility scripts (not serverless functions)
+api/migrations/
+api/utils/adminUtils.js
+
+# Config files (not needed in production)
+.eslintrc
+.prettierrc
+tsconfig.json
+babel.config.js
+
+# Tests
+__tests__/
+tests/
+*.test.js
+*.spec.js
+
+# Temporary files
+tmp/
+temp/
+.cache/
+
+# Public assets (served by Vercel static)
+# Keep public/ for static files

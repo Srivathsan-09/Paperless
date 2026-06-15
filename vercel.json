@@ -1,5 +1,11 @@
 {
     "version": 2,
+    "functions": {
+        "api/index.js": {
+            "memory": 1024,
+            "maxDuration": 30
+        }
+    },
     "rewrites": [
         {
             "source": "/api/(.*)",
@@ -8,6 +14,21 @@
         {
             "source": "/auth/(.*)",
             "destination": "/api/index.js"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/api/index.js"
+        }
+    ],
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=3600"
+                }
+            ]
         }
     ]
 }

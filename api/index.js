@@ -10,16 +10,29 @@ const requiredEnv = ['MONGODB_URI', 'JWT_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CL
 const missingEnv = requiredEnv.filter(env => !process.env[env]);
 if (missingEnv.length > 0) {
     console.error(`❌ Missing required environment variables: ${missingEnv.join(', ')}`);
-    // process.exit(1); // Don't crash the serverless function immediately
 }
 
 // Initialize Express app
 const app = express();
 
-// Connect to MongoDB via middleware
-app.use(async (req, res, next) => {
-    await connectDB();
+// Set request timeout for Vercel serverless (max 30s)
+app.use((req, res, next) => {
+    // Set response timeout
+    res.setTimeout(25000, () => {
+        res.status(408).json({ success: false, message: 'Request timeout' });
+    });
     next();
+});
+
+// Connect to MongoDB via middleware (with connection caching)
+app.use(async (req, res, next) => {
+    try {
+        await connectDB();
+        next();
+    } catch (err) {
+        console.error('DB Connection error:', err);
+        res.status(503).json({ success: false, message: 'Database unavailable' });
+    }
 });
 
 // Initialize Passport configuration
@@ -41,8 +54,9 @@ app.use(cors({
     credentials: true,
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Optimize body parser limits for serverless
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Initialize Passport (without sessions since we're using JWT)
 app.use(passport.initialize());
