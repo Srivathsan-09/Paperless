@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const passport = require('passport');
 const path = require('path');
-const connectDB = require('./config/db');
+const connectDB = require('../server/config/db');
 
 // Validate environment variables
 const requiredEnv = ['MONGODB_URI', 'JWT_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'];
@@ -36,7 +36,7 @@ app.use(async (req, res, next) => {
 });
 
 // Initialize Passport configuration
-require('./config/passport')(passport);
+require('../server/config/passport')(passport);
 
 // Normalize Frontend URL (remove trailing slash)
 // Priority: Custom FRONTEND_URL -> Vercel Production URL -> Vercel Preview URL -> Localhost
@@ -65,14 +65,14 @@ app.use(passport.initialize());
 // app.use(express.static(path.join(__dirname, '../Front end')));
 
 // Routes
-app.use('/auth', require('./routes/auth'));
-app.use('/api/categories', require('./routes/categories'));
-app.use('/api/entries', require('./routes/entries'));
-app.use('/api/admin', require('./routes/admin'));
+app.use('/auth', require('../server/routes/auth'));
+app.use('/api/categories', require('../server/routes/categories'));
+app.use('/api/entries', require('../server/routes/entries'));
+app.use('/api/admin', require('../server/routes/admin'));
 
 
 // Example protected route (for future use)
-const verifyToken = require('./middleware/verifyToken');
+const verifyToken = require('../server/middleware/verifyToken');
 app.get('/api/user/profile', verifyToken, (req, res) => {
     res.json({
         success: true,

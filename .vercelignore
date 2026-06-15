@@ -28,6 +28,11 @@ docs/
 # Migration and utility scripts (not serverless functions)
 api/migrations/
 api/utils/adminUtils.js
+api/config/
+api/middleware/
+api/models/
+api/routes/
+api/utils/
 
 # Config files (not needed in production)
 .eslintrc
