@@ -86,6 +86,81 @@ function getSubIconHelper(name) {
     return SUB_ICONS[name] || 'more-horizontal';
 }
 
+// ── IST DATE UTILITIES ───────────────────────────────────────────────────────
+// Dates are stored in MongoDB as UTC. These helpers convert UTC → IST (Asia/Kolkata)
+// for DISPLAY ONLY. All sorting, filtering, and DB operations remain on UTC.
+
+const IST_TZ = 'Asia/Kolkata';
+
+/**
+ * Converts any date input to a plain Date whose local components
+ * (getDate, getMonth, getFullYear, getDay) reflect IST wall-clock time.
+ * Use this when you need IST day/month/year numbers for display.
+ */
+function toIST(dateInput) {
+    const d = new Date(dateInput);
+    const fmt = new Intl.DateTimeFormat('en-CA', {
+        timeZone: IST_TZ,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+    });
+    const parts = Object.fromEntries(
+        fmt.formatToParts(d)
+           .filter(p => p.type !== 'literal')
+           .map(p => [p.type, p.value])
+    );
+    // Clamp midnight hour reported as '24' by some engines
+    const hour = parts.hour === '24' ? '00' : parts.hour;
+    return new Date(`${parts.year}-${parts.month}-${parts.day}T${hour}:${parts.minute}:${parts.second}`);
+}
+
+/**
+ * Short display format: '04 Feb' — used in history lists and summary pills.
+ */
+function formatISTShort(dateInput) {
+    return new Date(dateInput).toLocaleDateString('en-GB', {
+        timeZone: IST_TZ,
+        day: '2-digit',
+        month: 'short'
+    });
+}
+
+/**
+ * Date-only format for PDF tables: '04/02/2026'
+ */
+function formatISTDate(dateInput) {
+    return new Date(dateInput).toLocaleDateString('en-GB', {
+        timeZone: IST_TZ
+    });
+}
+
+/**
+ * Returns the IST date as a 'YYYY-MM-DD' string suitable for <input type="date"> pre-fill.
+ */
+function formatISTInput(dateInput) {
+    const ist = toIST(dateInput);
+    const y   = ist.getFullYear();
+    const m   = String(ist.getMonth() + 1).padStart(2, '0');
+    const day = String(ist.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+/**
+ * Returns today's date in IST as 'YYYY-MM-DD' (for default form values).
+ */
+function todayIST() {
+    return formatISTInput(new Date());
+}
+
+/**
+ * Returns a Date object whose .getDate()/.getMonth()/.getFullYear()/.getDay()
+ * reflect today in IST — used for "is today?" highlight comparisons.
+ */
+function todayISTObj() {
+    return toIST(new Date());
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 // --- PERSISTENCE ---
 
 function saveState() {
@@ -785,7 +860,7 @@ function getUniversalFormHTML(config) {
         title = 'Entry',
         onBack = 'closeModule()',
         amountValue = '',
-        dateValue = new Date().toISOString().split('T')[0],
+        dateValue = todayIST(),
         itemNameLabel = 'Product Name',
         itemNameValue = '',
         itemNamePlaceholder = 'e.g. Bread, Car service',
@@ -1050,7 +1125,7 @@ async function renderAnalytics() {
         const dailyTrend = new Array(daysInMonth).fill(0);
 
         currentMonthData.forEach(e => {
-            const d = new Date(e.date).getDate(); // 1-31
+            const d = toIST(e.date).getDate(); // 1-31 — extracted in IST
             if (d >= 1 && d <= daysInMonth) {
                 dailyTrend[d - 1] += e.amount;
             }
@@ -1964,9 +2039,9 @@ function renderSummaryList() {
                     </div>
                  `;
             } else {
-                const dateObj = new Date(e.date);
+                const dateObj = toIST(e.date);
                 const day = dateObj.getDate();
-                const month = dateObj.toLocaleString('en-US', { month: 'short' }).toUpperCase();
+                const month = dateObj.toLocaleString('en-US', { month: 'short', timeZone: IST_TZ }).toUpperCase();
                 dateHTML = `
                     <div class="ss-date-pill">
                         <span class="d">${day}</span>
@@ -2059,7 +2134,7 @@ async function renderEBBillForm(container, categoryId, customBackAction = null, 
 
     // Pre-fill values
     const amountVal = existingEntry ? existingEntry.amount : '';
-    const dateVal = existingEntry ? existingEntry.date.split('T')[0] : new Date().toISOString().split('T')[0];
+    const dateVal = existingEntry ? formatISTInput(existingEntry.date) : todayIST();
 
     container.innerHTML = getUniversalFormHTML({
         title: existingEntry ? 'Edit EB Bill' : 'EB Bill Entry',
@@ -2109,7 +2184,7 @@ async function renderEBBillForm(container, categoryId, customBackAction = null, 
                 if (histContainer) {
                     await renderSubcategoryHistory(histContainer, 'EB Bill', categoryId);
                     document.getElementById('universalForm').reset();
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = todayIST();
                     if (document.getElementById('formDate')) document.getElementById('formDate').value = today;
                 } else {
                     renderEBBillForm(container, categoryId);
@@ -2144,7 +2219,7 @@ async function renderGenericForm(container, subName, categoryId, customBackActio
 
     // Pre-fill values
     const amountVal = existingEntry ? existingEntry.amount : '';
-    const dateVal = existingEntry ? existingEntry.date.split('T')[0] : new Date().toISOString().split('T')[0];
+    const dateVal = existingEntry ? formatISTInput(existingEntry.date) : todayIST();
     const notesVal = existingEntry ? existingEntry.notes.replace(/\s*\(Hosp: .*\)/, '') : ''; // Remove hosp tag if present
     const itemNameVal = existingEntry ? (existingEntry.itemName || '') : '';
 
@@ -2221,7 +2296,7 @@ async function renderGenericForm(container, subName, categoryId, customBackActio
                     // Clear form values manually
                     document.getElementById('universalForm').reset();
                     // Restore defaults/dates if needed (retain date, reset amount)
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = todayIST();
                     if (document.getElementById('formDate')) document.getElementById('formDate').value = today;
 
                 } else {
@@ -2273,7 +2348,7 @@ async function renderSubcategoryHistory(container, subName, categoryId) {
                 ${history.map(h => `
                     <div class="history-item">
                         <div class="history-left">
-                            <span class="history-date">${new Date(h.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
+                            <span class="history-date">${formatISTShort(h.date)}</span>
                             <div class="history-info">
                                 <span class="history-desc">${h.itemName || subName}</span>
                                 ${h.notes ? `<span class="history-notes">${h.notes}</span>` : ''}
@@ -2525,12 +2600,12 @@ async function renderMilkTracker(container, searchRange = null, page = 1) {
                                 
                                 ${searchRange ?
                 paginatedDates.map(d => {
-                    const dayData = milkDataArr.find(entry => new Date(entry.date).toDateString() === d.toDateString());
+                    const dayData = milkDataArr.find(entry => toIST(entry.date).toDateString() === toIST(d).toDateString());
                     return renderDayCard(dayData, true, d.getDate(), d);
                 }).join('') :
                 Array.from({ length: new Date(STATE.selectedYear, STATE.selectedMonth + 1, 0).getDate() }, (_, i) => {
                     const day = i + 1;
-                    const dayData = milkDataArr.find(entry => new Date(entry.date).getDate() === day);
+                    const dayData = milkDataArr.find(entry => toIST(entry.date).getDate() === day);
                     return renderDayCard(dayData, false, day);
                 }).join('')
             }
@@ -2625,10 +2700,10 @@ async function renderMilkTracker(container, searchRange = null, page = 1) {
     `;
 
     function renderDayCard(dayData, isSearchMode, dayNumber = null, specificDate = null) {
-        const d = dayData ? new Date(dayData.date) : (specificDate || new Date(STATE.selectedYear, STATE.selectedMonth, dayNumber));
+        const d = dayData ? toIST(dayData.date) : (specificDate ? toIST(specificDate) : new Date(STATE.selectedYear, STATE.selectedMonth, dayNumber));
         const day = d.getDate();
         const dayHeaderStr = `${String(day).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()} ${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]}`;
-        const today = new Date();
+        const today = todayISTObj();
         const isToday = today.getDate() === day && today.getMonth() === d.getMonth() && today.getFullYear() === d.getFullYear();
 
         // Fixed onclick to always use the full date info
@@ -3212,8 +3287,7 @@ function closeMonthPicker() {
 // --- UTILS & HELPERS ---
 
 function getRelativeDate(dateString) {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    return formatISTShort(dateString);
 }
 
 // --- PDF EXPORT ---
@@ -3265,7 +3339,7 @@ async function exportToPDF() {
                 const milkRows = monthlyData
                     .sort((a, b) => new Date(a.date) - new Date(b.date))
                     .map(d => [
-                        new Date(d.date).toLocaleDateString('en-GB'),
+                        formatISTDate(d.date),
                         `${d.liters} L`, // Specific Milk Column
                         `₹${d.amount.toLocaleString()}`
                     ]);
@@ -3311,7 +3385,7 @@ async function exportToPDF() {
             const historyRows = monthlyData
                 .sort((a, b) => new Date(a.date) - new Date(b.date))
                 .map(h => [
-                    new Date(h.date).toLocaleDateString('en-GB'),
+                    formatISTDate(h.date),
                     h.itemName || h.notes || h.subCategory || 'Item',
                     `₹${h.amount.toLocaleString()}`
                 ]);
@@ -3389,7 +3463,7 @@ async function exportToPDF() {
             const historyRows = monthlyData
                 .sort((a, b) => new Date(a.date) - new Date(b.date))
                 .map(h => [
-                    new Date(h.date).toLocaleDateString('en-GB'),
+                    formatISTDate(h.date),
                     h.itemName || h.notes || h.subCategory || 'Expense',
                     h.parentCategory || h.category || '-',
                     h.paymentMode || 'Cash', // Add Mode column
@@ -3649,7 +3723,7 @@ async function renderSubcategoryView(container, parentName) {
                             ${recentEntries.sort((a, b) => new Date(b.date) - new Date(a.date)).map(entry => `
                                  <div class="history-item">
                                     <div class="history-left">
-                                        <span class="history-date">${new Date(entry.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}</span>
+                                        <span class="history-date">${formatISTShort(entry.date)}</span>
                                         <div class="history-info">
                                             <span class="history-desc">${entry.itemName || entry.notes || entry.category}</span>
                                         </div>
@@ -3880,7 +3954,7 @@ window.handleEditEntry = async function (event, entryId, categoryId) {
         if (subName === 'EB Bill') {
             await renderEBBillForm(container, categoryId, null, entry);
         } else if (entry.type === 'milk' || subName === 'Milk') {
-            const d = new Date(entry.date);
+            const d = toIST(entry.date);
             const dateParam = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
             openMilkFormByDate(dateParam, entry._id);
         } else {
