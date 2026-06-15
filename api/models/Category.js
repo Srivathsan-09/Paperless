@@ -8,8 +8,8 @@ const categorySchema = new mongoose.Schema({
     },
     parentCategory: {
         type: String,
-        required: true,
-        // Daily Expenses, Groceries, Health, etc.
+        default: null,
+        // Only 'Miscellaneous' and 'Savings' for most categories, null for top-level categories
     },
     name: {
         type: String,
@@ -19,6 +19,11 @@ const categorySchema = new mongoose.Schema({
         type: String,
         enum: ['milk', 'general'],
         default: 'general'
+    },
+    isParent: {
+        type: Boolean,
+        default: false,
+        // true for Miscellaneous and Savings only
     },
     createdAt: {
         type: Date,

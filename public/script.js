@@ -678,39 +678,41 @@ async function addEntry(entry) {
 // --- CUSTOM CRUD ---
 
 async function promptAddCategory() {
-    const name = prompt("Enter Category Name:");
+    const name = await showPrompt("Enter Category Name:");
     if (name) {
         try {
-            const id = name.toLowerCase().replace(/\s+/g, '-');
+            // New categories are always top-level (parentCategory: null)
             const newCategory = await fetchAPI('/api/categories', {
                 method: 'POST',
-                body: JSON.stringify({ name, parentCategory: 'General', type: 'general' })
+                body: JSON.stringify({ name, parentCategory: null, type: 'general' })
             });
 
-            alert(`Category "${name}" added!`);
-            window.location.href = `category.html?id=${newCategory._id}`;
+            showToast(`Category "${name}" added!`, 'success');
+            renderDashboard();
         } catch (err) {
-            alert('Failed to add category: ' + err.message);
+            showToast('Failed to add category: ' + err.message, 'error');
         }
     }
 }
 
 async function promptAddItem(catId) {
     const cat = STATE.categories.find(c => c.id === catId || c._id === catId);
-    const name = await showPrompt("Enter Item Name:", "e.g. Bread, Grocery Item");
+    const name = await showPrompt("Enter Item Name:");
     if (name) {
         try {
+            // For Miscellaneous and Savings, add as subcategory (with parentCategory set)
             await fetchAPI('/api/categories', {
                 method: 'POST',
                 body: JSON.stringify({
                     name,
-                    parentCategory: cat.name,
-                    type: name === 'Milk' ? 'milk' : 'general'
+                    parentCategory: cat.name,  // Parent is 'Miscellaneous' or 'Savings'
+                    type: 'general'
                 })
             });
+            showToast(`"${name}" added to ${cat.name}!`, 'success');
             openCategory(catId);
         } catch (err) {
-            alert('Failed to add item: ' + err.message);
+            showToast('Failed to add item: ' + err.message, 'error');
         }
     }
 }
@@ -1387,33 +1389,24 @@ async function renderDashboard() {
     `;
 
     // Fetch categories for dashboard (Critical Path)
-    // Optimization: Request only dashboard items from backend to reduce payload
+    // Now fetches top-level categories (parentCategory: null) and parent categories (isParent: true)
     let categories = await fetchCategories('', true);
     // Use defaults if none found from API
     if (categories.length === 0) {
-        // If API returns empty (new user?), falls back to local state or empty
-        // logic below handles it
+        // If API returns empty (new user?), will be seeded automatically on next request
     } else {
         STATE.categories = categories; // Update local state
     }
 
-    // Exclude subcategories of Misc/Savings from dashboard, and manual inject parent folders
-    let dashboardList = categories.filter(c => c.parentCategory !== 'Miscellaneous' && c.parentCategory !== 'Savings');
-
-    // Ensure Miscellaneous Folder exists
-    if (!dashboardList.some(c => c.name === 'Miscellaneous')) {
-        dashboardList.push({ name: 'Miscellaneous', id: 'miscellaneous', icon: 'more-horizontal', _id: 'miscellaneous' });
-    }
-    // Ensure Savings Folder exists
-    if (!dashboardList.some(c => c.name === 'Savings')) {
-        dashboardList.push({ name: 'Savings', id: 'savings', icon: 'more-horizontal', _id: 'savings' });
-    }
+    // With the new structure, all dashboard categories come from API
+    // No need to filter out Misc/Savings or inject them manually
+    let dashboardList = categories;
 
     // --- SORTING LOGIC ---
     // 1. Extract Special Categories
     const milkCat = dashboardList.find(c => c.name === 'Milk');
-    const miscCat = dashboardList.find(c => c.name === 'Miscellaneous');
-    const savingsCat = dashboardList.find(c => c.name === 'Savings');
+    const miscCat = dashboardList.find(c => c.name === 'Miscellaneous' && c.isParent);
+    const savingsCat = dashboardList.find(c => c.name === 'Savings' && c.isParent);
 
     // 2. Filter out special categories to get the general list
     let generalCats = dashboardList.filter(c =>
@@ -1449,7 +1442,7 @@ async function renderDashboard() {
                         </button>
                         <div id="menu-${cat._id || cat.id}" class="card-dropdown-menu">
                             <button onclick="editCategory(event, '${cat._id || cat.id}', '${cat.name.replace(/'/g, "\\'")}')">Rename</button>
-                            ${(cat.id !== 'miscellaneous' && cat.id !== 'savings') ?
+                            ${(!cat.isParent && cat.name !== 'Milk') ?
             `<button class="delete-option" onclick="handleDeleteCategory(event, '${cat._id || cat.id}')">Delete</button>` : ''}
                         </div>
                      </div>
@@ -1595,8 +1588,20 @@ async function openCategory(id, isBackgroundRefresh = false) {
     let recentExpenses = [];
     try {
         const monthStr = `${STATE.selectedYear}-${String(STATE.selectedMonth + 1).padStart(2, '0')}`;
-        // Add timestamp to prevent caching
-        recentExpenses = await fetchAPI(`/api/entries?parentCategory=${encodeURIComponent(cat.name)}&month=${monthStr}&_t=${Date.now()}`);
+        // For top-level categories, use the category name or ID
+        // For parent categories (Misc/Savings), entries are associated with subcategories
+        if (cat.isParent) {
+            // For parent categories, fetch entries for all their subcategories
+            recentExpenses = await fetchAPI(`/api/entries?parentCategory=${encodeURIComponent(cat.name)}&month=${monthStr}&_t=${Date.now()}`);
+        } else {
+            // For top-level categories, they might not have a parentCategory set
+            // So we need to find entries by category name or _id
+            recentExpenses = await fetchAPI(`/api/entries?categoryId=${cat._id}&month=${monthStr}&_t=${Date.now()}`);
+            // If that fails, try by name (for backward compatibility)
+            if (recentExpenses.length === 0) {
+                recentExpenses = await fetchAPI(`/api/entries?parentCategory=${encodeURIComponent(cat.name)}&month=${monthStr}&_t=${Date.now()}`);
+            }
+        }
     } catch (e) { console.error(e); }
 
     // Unified Header Update
@@ -1659,10 +1664,8 @@ async function openCategory(id, isBackgroundRefresh = false) {
                         </button>
                         <div id="menu-${sub._id}" class="card-dropdown-menu">
                             <button onclick="editCategory(event, '${sub._id}', '${sub.name.replace(/'/g, "\\'")}')">Rename</button>
-                             ${(id === 'savings') ?
-            `<button class="delete-option" onclick="handleDeleteCategory(event, '${sub._id}')">Delete</button>` :
-            (id !== 'miscellaneous') ?
-                `<button class="delete-option" onclick="handleDeleteSubcategory(event, '${id}', '${sub._id}', '${sub.name.replace(/'/g, "\\'")}')">Delete</button>` : ''}
+                             ${(sub.name !== 'Miscellaneous' && sub.name !== 'Savings') ?
+            `<button class="delete-option" onclick="handleDeleteCategory(event, '${sub._id}')">Delete</button>` : ''}
                         </div>
                     </div>
                     <svg><use href="#icon-${getSubIconHelper(sub.name)}"></use></svg>
