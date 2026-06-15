@@ -1,7 +1,29 @@
 const express = require('express');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 const router = express.Router();
+
+const getAdminEmails = () => {
+    const raw = process.env.DEFAULT_ADMIN_EMAILS || '';
+    return raw.split(',').map(email => email.trim().toLowerCase()).filter(Boolean);
+};
+
+const shouldPromoteToAdmin = async (email) => {
+    const normalizedEmail = (email || '').toLowerCase();
+    const adminEmails = getAdminEmails();
+
+    if (adminEmails.includes(normalizedEmail)) {
+        return true;
+    }
+
+    if (process.env.AUTO_ADMIN_FIRST_USER === 'true') {
+        const existingAdmin = await User.exists({ isAdmin: true });
+        return !existingAdmin;
+    }
+
+    return false;
+};
 
 /**
  * @route   GET /auth/google
@@ -61,8 +83,6 @@ router.get(
     }
 );
 
-const User = require('../models/User');
-
 /**
  * @route   POST /auth/signup
  * @desc    Register a new user
@@ -81,13 +101,16 @@ router.post('/signup', async (req, res) => {
             });
         }
 
+        const isAdmin = await shouldPromoteToAdmin(email);
+
         // Create new user
         user = await User.create({
             name: `${firstName} ${lastName}`,
             email,
             password,
             createdAt: new Date(),
-            lastLogin: new Date()
+            lastLogin: new Date(),
+            isAdmin,
         });
 
         // Generate JWT
@@ -148,6 +171,11 @@ router.post('/login', async (req, res) => {
                 success: false,
                 message: 'Invalid credentials'
             });
+        }
+
+        // Promote existing user to admin if they match configured admin emails
+        if (!user.isAdmin && await shouldPromoteToAdmin(user.email)) {
+            user.isAdmin = true;
         }
 
         // Update last login

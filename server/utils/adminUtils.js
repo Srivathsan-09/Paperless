@@ -1,7 +1,7 @@
 /**
  * Admin Management Utility Script
  * 
- * Usage: node api/utils/adminUtils.js <email> <action>
+ * Usage: node server/utils/adminUtils.js <action> [email]
  * 
  * Actions:
  *   promote <email>  - Make user an admin

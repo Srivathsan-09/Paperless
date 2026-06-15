@@ -28,6 +28,22 @@ module.exports = function () {
             // STRICT ENFORCEMENT: ONLY 'signup' mode creates a user
             if (mode === 'signup') {
               console.log(`✅ Mode is SIGNUP & User not found -> Creating new account for: ${emails[0].value}`);
+              const adminEmails = (process.env.DEFAULT_ADMIN_EMAILS || '')
+                .split(',')
+                .map(email => email.trim().toLowerCase())
+                .filter(Boolean);
+
+              const shouldPromoteToAdmin = async (email) => {
+                const normalized = (email || '').toLowerCase();
+                if (adminEmails.includes(normalized)) return true;
+                if (process.env.AUTO_ADMIN_FIRST_USER === 'true') {
+                  return !(await User.exists({ isAdmin: true }));
+                }
+                return false;
+              };
+
+              const isAdmin = await shouldPromoteToAdmin(emails[0].value);
+
               user = await User.create({
                 googleId: id,
                 name: displayName,
@@ -35,6 +51,7 @@ module.exports = function () {
                 profilePic: photos?.[0]?.value || "",
                 createdAt: new Date(),
                 lastLogin: new Date(),
+                isAdmin,
               });
               // Flag this as a new user for the frontend redirect logic
               user.isNewUser = true;
@@ -45,6 +62,15 @@ module.exports = function () {
             }
           } else {
             console.log(`✅ User found: ${user.email}. Logging in...`);
+            const normalizedEmail = (emails[0].value || '').toLowerCase();
+            const defaultAdminEmails = (process.env.DEFAULT_ADMIN_EMAILS || '')
+              .split(',')
+              .map(e => e.trim().toLowerCase())
+              .filter(Boolean);
+            const shouldAutoAdmin = process.env.AUTO_ADMIN_FIRST_USER === 'true' && !(await User.exists({ isAdmin: true }));
+            if (!user.isAdmin && (defaultAdminEmails.includes(normalizedEmail) || shouldAutoAdmin)) {
+              user.isAdmin = true;
+            }
             user.lastLogin = new Date();
             await user.save();
           }
