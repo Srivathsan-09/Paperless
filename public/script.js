@@ -600,9 +600,10 @@ function checkAuth() {
 
 const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 const isAuthPage = currentPage === 'Loginpage.html';
+const isPublicPage = ['admin.html', 'get-started.html', 'success.html'].includes(currentPage);
 
 
-if (!checkAuth() && !isAuthPage) {
+if (!checkAuth() && !isAuthPage && !isPublicPage) {
     window.location.href = 'Loginpage.html';
 } else if (STATE.isLoggedIn && isAuthPage) {
     // If already logged in and on Login Page, go to dashboard
@@ -1638,7 +1639,7 @@ async function openCategory(id, isBackgroundRefresh = false) {
 
     main.innerHTML = `
         <div class="category-overhaul-wrapper">
-        <div class="overhaul-header" style="${window.innerWidth <= 768 ? 'margin-bottom: 0.5rem;' : ''}">
+        <div class="overhaul-header" style="margin: 0.25rem 0 0.25rem 0; ${window.innerWidth <= 768 ? 'margin-bottom: 0.5rem;' : ''}">
             <div class="overhaul-tabs-row">
                 <div class="header-left-col" style="display: flex; justify-content: flex-start; min-width: 44px;">
                     <!-- Desktop Back Button -->
@@ -1681,9 +1682,9 @@ async function openCategory(id, isBackgroundRefresh = false) {
             </div>
         </div>
 
-        <div class="recent-expenses-container overhaul-v2">
+        <div class="recent-expenses-container overhaul-v2" style="max-height: 250px; min-height: auto; margin-top: 0.5rem; padding: 1rem 1.5rem; overflow: hidden;">
             <div class="recent-expenses-header">Recent Expenses in ${cat.name}</div>
-            <div class="history-scroller">
+            <div class="history-scroller" style="max-height: 180px; overflow-y: auto;">
                 <div class="history-list">
                     ${recentExpenses.length > 0 ? recentExpenses.map(exp => `
                         <div class="history-item">
@@ -1703,7 +1704,7 @@ async function openCategory(id, isBackgroundRefresh = false) {
                                 </div>
                             </div>
                         </div>
-                    `).join('') : `<p style="text-align: center; color: var(--text-muted); padding: 1.5rem 0;">No recent expenses in ${cat.name}.</p>`}
+                    `).join('') : `<p style="text-align: center; color: var(--text-muted); padding: 0.5rem 0;">No recent expenses in ${cat.name}.</p>`}
                 </div>
             </div>
         </div>
@@ -3555,6 +3556,20 @@ function showSuccessLogo() {
     }, 2000); // 2 seconds as requested
 }
 
+async function initAdminLink() {
+    const adminLink = document.getElementById('adminPanelLink');
+    if (!adminLink || !STATE.isLoggedIn) return;
+
+    try {
+        const profile = await fetchAPI('/api/user/profile');
+        if (profile?.user?.isAdmin) {
+            adminLink.style.display = '';
+        }
+    } catch {
+        // Non-admin or profile unavailable — keep link hidden
+    }
+}
+
 // --- INITIALIZATION ---
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -3582,6 +3597,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderDashboard();
         }
     }
+
+    initAdminLink();
 
     // Always check for common elements
     const closePanel = document.getElementById('closePanel');

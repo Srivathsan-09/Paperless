@@ -12,6 +12,7 @@
 
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const verifyToken = require('../middleware/verifyToken');
 const verifyAdmin = require('../middleware/verifyAdmin');
 const User = require('../models/User');
@@ -19,6 +20,89 @@ const Category = require('../models/Category');
 const Entry = require('../models/Entry');
 const AnalyticsUtils = require('../utils/analyticsUtils');
 const ExportUtils = require('../utils/exportUtils');
+
+/**
+ * Safely convert a string to mongoose ObjectId.
+ * Returns null if invalid.
+ */
+function toObjectId(id) {
+    try {
+        return new mongoose.Types.ObjectId(id);
+    } catch (e) {
+        return null;
+    }
+}
+
+// ============= DASHBOARD STATS =============
+
+/**
+ * GET /api/admin/stats
+ * Aggregate dashboard statistics
+ */
+router.get('/stats', verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const [totalUsers, totalCategories, totalEntries, spendingResult] = await Promise.all([
+            User.countDocuments(),
+            Category.countDocuments(),
+            Entry.countDocuments(),
+            Entry.aggregate([
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ])
+        ]);
+
+        const totalSpending = spendingResult[0]?.total || 0;
+
+        res.json({
+            success: true,
+            stats: {
+                totalUsers,
+                totalCategories,
+                totalEntries,
+                totalSpending,
+                avgSpending: totalUsers > 0 ? Math.round(totalSpending / totalUsers) : 0
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching admin stats:', err);
+        res.status(500).json({ success: false, message: 'Error fetching dashboard stats' });
+    }
+});
+
+// ============= RECENT ENTRIES (DASHBOARD) =============
+
+/**
+ * GET /api/admin/recent/entries
+ * Fetch the most recent N entries across all users, enriched with user name
+ */
+router.get('/recent/entries', verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit) || 10, 50);
+
+        const entries = await Entry.find()
+            .sort({ date: -1, createdAt: -1 })
+            .limit(limit);
+
+        const enriched = await Promise.all(entries.map(async (entry) => {
+            const [category, user] = await Promise.all([
+                Category.findById(entry.categoryId).select('name parentCategory'),
+                User.findById(entry.userId).select('name')
+            ]);
+            let catName = category?.name || 'Unknown';
+            if (category?.parentCategory && ['Miscellaneous', 'Savings'].includes(category.parentCategory)) catName = `${category.parentCategory} → ${catName}`;
+
+            return {
+                ...entry.toObject(),
+                categoryName: catName,
+                userName: user?.name || 'Unknown User'
+            };
+        }));
+
+        res.json({ success: true, entries: enriched });
+    } catch (err) {
+        console.error('Error fetching recent entries:', err);
+        res.status(500).json({ success: false, message: 'Error fetching recent entries' });
+    }
+});
 
 // ============= USER MANAGEMENT =============
 
@@ -91,24 +175,27 @@ router.get('/users', verifyToken, verifyAdmin, async (req, res) => {
  */
 router.get('/users/:userId', verifyToken, verifyAdmin, async (req, res) => {
     try {
-        const user = await User.findById(req.params.userId).select('-password');
+        const uid = toObjectId(req.params.userId);
+        if (!uid) return res.status(400).json({ success: false, message: 'Invalid user ID' });
+
+        const user = await User.findById(uid).select('-password');
         if (!user) {
             return res.status(404).json({ success: false, message: 'User not found' });
         }
 
         // Get categories
-        const categories = await Category.find({ userId: req.params.userId });
+        const categories = await Category.find({ userId: uid });
         const categoryCount = categories.length;
 
         // Get entries
-        const entries = await Entry.find({ userId: req.params.userId });
+        const entries = await Entry.find({ userId: uid });
         const entryCount = entries.length;
 
-        // Calculate stats
-        const stats = await AnalyticsUtils.getSpendingStats(user._id);
-        const monthlyTrend = await AnalyticsUtils.getMonthlyTrend(user._id);
-        const categoryDistribution = await AnalyticsUtils.getCategoryDistribution(user._id);
-        const topCategories = await AnalyticsUtils.getTopCategories(user._id, 5);
+        // Calculate stats — userId is already an ObjectId here via user._id
+        const stats = await AnalyticsUtils.getSpendingStats(uid);
+        const monthlyTrend = await AnalyticsUtils.getMonthlyTrend(uid);
+        const categoryDistribution = await AnalyticsUtils.getCategoryDistribution(uid);
+        const topCategories = await AnalyticsUtils.getTopCategories(uid, 5);
 
         res.json({
             success: true,
@@ -131,6 +218,107 @@ router.get('/users/:userId', verifyToken, verifyAdmin, async (req, res) => {
     }
 });
 
+/**
+ * DELETE /api/admin/users/:userId
+ * Delete user account and cascade delete all their categories and entries
+ */
+router.delete('/users/:userId', verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const uid = toObjectId(req.params.userId);
+        if (!uid) return res.status(400).json({ success: false, message: 'Invalid user ID' });
+
+        const user = await User.findById(uid);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Prevent self-deletion
+        if (user._id.toString() === req.user._id.toString()) {
+            return res.status(400).json({ success: false, message: 'Admin accounts cannot delete themselves' });
+        }
+
+        // Prevent deleting admin users
+        if (user.isAdmin) {
+            return res.status(400).json({ success: false, message: 'Cannot delete admin accounts' });
+        }
+
+        // Delete associated entries
+        await Entry.deleteMany({ userId: uid });
+
+        // Delete associated categories
+        await Category.deleteMany({ userId: uid });
+
+        // Delete user account
+        await User.deleteOne({ _id: uid });
+
+        res.json({ success: true, message: `Successfully deleted user ${user.name} and all their data` });
+    } catch (err) {
+        console.error('Error deleting user:', err);
+        res.status(500).json({ success: false, message: 'Error deleting user account' });
+    }
+});
+
+/**
+ * POST /api/admin/users/bulk-delete
+ * Delete multiple user accounts and cascade delete all their categories and entries
+ */
+router.post('/users/bulk-delete', verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const { userIds } = req.body;
+        if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ success: false, message: 'No user IDs provided' });
+        }
+
+        // Convert string IDs to ObjectIds and filter out invalid ones
+        const oids = userIds.map(id => toObjectId(id)).filter(id => id !== null);
+        if (oids.length === 0) {
+            return res.status(400).json({ success: false, message: 'No valid user IDs provided' });
+        }
+
+        // Find users to delete (prevent self-deletion or deleting other admins)
+        const users = await User.find({ _id: { $in: oids } });
+        const deletableUserIds = [];
+        const skippedNames = [];
+
+        for (const user of users) {
+            const isSelf = user._id.toString() === req.user._id.toString();
+            const isAdmin = user.isAdmin;
+
+            if (isSelf || isAdmin) {
+                skippedNames.push(user.name);
+            } else {
+                deletableUserIds.push(user._id);
+            }
+        }
+
+        if (deletableUserIds.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No deletable users selected. Admin accounts cannot be deleted.'
+            });
+        }
+
+        // Delete associated entries
+        await Entry.deleteMany({ userId: { $in: deletableUserIds } });
+
+        // Delete associated categories
+        await Category.deleteMany({ userId: { $in: deletableUserIds } });
+
+        // Delete user accounts
+        await User.deleteMany({ _id: { $in: deletableUserIds } });
+
+        let message = `Successfully deleted ${deletableUserIds.length} user(s) and all their associated data.`;
+        if (skippedNames.length > 0) {
+            message += ` Skipped admin accounts: ${skippedNames.join(', ')}.`;
+        }
+
+        res.json({ success: true, message });
+    } catch (err) {
+        console.error('Error bulk deleting users:', err);
+        res.status(500).json({ success: false, message: 'Error bulk deleting user accounts' });
+    }
+});
+
 // ============= CATEGORY MANAGEMENT =============
 
 /**
@@ -139,7 +327,10 @@ router.get('/users/:userId', verifyToken, verifyAdmin, async (req, res) => {
  */
 router.get('/users/:userId/categories', verifyToken, verifyAdmin, async (req, res) => {
     try {
-        const categories = await Category.find({ userId: req.params.userId }).sort({ createdAt: -1 });
+        const uid = toObjectId(req.params.userId);
+        if (!uid) return res.status(400).json({ success: false, message: 'Invalid user ID' });
+
+        const categories = await Category.find({ userId: uid }).sort({ createdAt: -1 });
 
         // Enrich with entry counts
         const enrichedCategories = await Promise.all(categories.map(async (cat) => {
@@ -175,14 +366,18 @@ router.get('/users/:userId/categories', verifyToken, verifyAdmin, async (req, re
  */
 router.get('/users/:userId/entries', verifyToken, verifyAdmin, async (req, res) => {
     try {
+        const uid = toObjectId(req.params.userId);
+        if (!uid) return res.status(400).json({ success: false, message: 'Invalid user ID' });
+
         const { page = 1, limit = 50, categoryId, startDate, endDate, month, year } = req.query;
         const skip = (page - 1) * limit;
 
         // Build query
-        let query = { userId: req.params.userId };
+        let query = { userId: uid };
 
         if (categoryId) {
-            query.categoryId = categoryId;
+            const catId = toObjectId(categoryId);
+            if (catId) query.categoryId = catId;
         }
 
         if (month && year) {
@@ -204,12 +399,16 @@ router.get('/users/:userId/entries', verifyToken, verifyAdmin, async (req, res) 
             .skip(skip)
             .limit(parseInt(limit));
 
-        // Enrich with category names
+        // Enrich with category names (including parent category info)
         const enrichedEntries = await Promise.all(entries.map(async (entry) => {
             const category = await Category.findById(entry.categoryId);
+            let displayName = category?.name || 'Unknown';
+            if (category?.parentCategory && ['Miscellaneous', 'Savings'].includes(category.parentCategory)) {
+                displayName = `${category.parentCategory} → ${category.name}`;
+            }
             return {
                 ...entry.toObject(),
-                categoryName: category?.name || 'Unknown'
+                categoryName: displayName
             };
         }));
 
@@ -239,7 +438,10 @@ router.get('/users/:userId/entries', verifyToken, verifyAdmin, async (req, res) 
  */
 router.get('/analytics/:userId', verifyToken, verifyAdmin, async (req, res) => {
     try {
-        const analytics = await AnalyticsUtils.getCompleteDashboard(req.params.userId);
+        const uid = toObjectId(req.params.userId);
+        if (!uid) return res.status(400).json({ success: false, message: 'Invalid user ID' });
+
+        const analytics = await AnalyticsUtils.getCompleteDashboard(uid);
 
         res.json({
             success: true,
@@ -257,7 +459,10 @@ router.get('/analytics/:userId', verifyToken, verifyAdmin, async (req, res) => {
  */
 router.get('/analytics/:userId/trends', verifyToken, verifyAdmin, async (req, res) => {
     try {
-        const trends = await AnalyticsUtils.getMonthlyTrend(req.params.userId);
+        const uid = toObjectId(req.params.userId);
+        if (!uid) return res.status(400).json({ success: false, message: 'Invalid user ID' });
+
+        const trends = await AnalyticsUtils.getMonthlyTrend(uid);
 
         res.json({
             success: true,
@@ -272,128 +477,11 @@ router.get('/analytics/:userId/trends', verifyToken, verifyAdmin, async (req, re
 // ============= EXPORT FEATURES =============
 
 /**
- * GET /api/admin/export/:userId/json
- * Export user data as JSON
- */
-router.get('/export/:userId/json', verifyToken, verifyAdmin, async (req, res) => {
-    try {
-        const user = await User.findById(req.params.userId).select('-password');
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found' });
-        }
-
-        const categories = await Category.find({ userId: req.params.userId });
-        const entries = await Entry.find({ userId: req.params.userId });
-
-        // Enrich entries with category names
-        const enrichedEntries = await Promise.all(entries.map(async (entry) => {
-            const category = await Category.findById(entry.categoryId);
-            return {
-                ...entry.toObject(),
-                categoryName: category?.name || 'Unknown'
-            };
-        }));
-
-        const stats = await AnalyticsUtils.getSpendingStats(user._id);
-        const categoryDistribution = await AnalyticsUtils.getCategoryDistribution(user._id);
-        const monthlySpending = await AnalyticsUtils.getMonthlyTrend(user._id);
-        const paymentModes = await AnalyticsUtils.getPaymentModeDistribution(user._id);
-
-        const completeData = ExportUtils.generateCompleteExport(
-            user,
-            categories,
-            enrichedEntries,
-            {
-                totalCategories: categories.length,
-                totalEntries: entries.length,
-                totalSpending: stats.totalSpending,
-                averageAmount: stats.averageAmount,
-                categoryDistribution: categoryDistribution.reduce((acc, cat) => {
-                    acc[cat.categoryName] = cat.total;
-                    return acc;
-                }, {}),
-                monthlySpending: monthlySpending.reduce((acc, m) => {
-                    acc[m.month] = m.total;
-                    return acc;
-                }, {}),
-                paymentModes
-            }
-        );
-
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Content-Disposition', `attachment; filename="user_${user._id}_export.json"`);
-        res.json(completeData);
-    } catch (err) {
-        console.error('Error exporting JSON:', err);
-        res.status(500).json({ success: false, message: 'Error exporting data' });
-    }
-});
-
-/**
- * GET /api/admin/export/:userId/csv/entries
- * Export entries as CSV
- */
-router.get('/export/:userId/csv/entries', verifyToken, verifyAdmin, async (req, res) => {
-    try {
-        const entries = await Entry.find({ userId: req.params.userId });
-
-        // Enrich with category names
-        const enrichedEntries = await Promise.all(entries.map(async (entry) => {
-            const category = await Category.findById(entry.categoryId);
-            return {
-                ...entry.toObject(),
-                categoryName: category?.name || 'Unknown'
-            };
-        }));
-
-        const csvContent = ExportUtils.generateEntriesCSV(enrichedEntries);
-
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', `attachment; filename="entries_${req.params.userId}.csv"`);
-        res.send(csvContent);
-    } catch (err) {
-        console.error('Error exporting CSV:', err);
-        res.status(500).json({ success: false, message: 'Error exporting CSV' });
-    }
-});
-
-/**
- * GET /api/admin/export/:userId/csv/categories
- * Export categories as CSV
- */
-router.get('/export/:userId/csv/categories', verifyToken, verifyAdmin, async (req, res) => {
-    try {
-        const categories = await Category.find({ userId: req.params.userId });
-
-        // Enrich with stats
-        const enrichedCategories = await Promise.all(categories.map(async (cat) => {
-            const entryCount = await Entry.countDocuments({ categoryId: cat._id });
-            const spendingResult = await Entry.aggregate([
-                { $match: { categoryId: cat._id } },
-                { $group: { _id: null, total: { $sum: '$amount' } } }
-            ]);
-
-            return {
-                ...cat.toObject(),
-                entryCount,
-                totalSpending: spendingResult[0]?.total || 0
-            };
-        }));
-
-        const csvContent = ExportUtils.generateCategoriesCSV(enrichedCategories);
-
-        res.setHeader('Content-Type', 'text/csv');
-        res.setHeader('Content-Disposition', `attachment; filename="categories_${req.params.userId}.csv"`);
-        res.send(csvContent);
-    } catch (err) {
-        console.error('Error exporting categories CSV:', err);
-        res.status(500).json({ success: false, message: 'Error exporting CSV' });
-    }
-});
-
-/**
  * GET /api/admin/export/users/csv
  * Export all users as CSV
+ * 
+ * IMPORTANT: This MUST be declared BEFORE the /:userId routes to prevent
+ * Express from treating the literal string "users" as a :userId parameter.
  */
 router.get('/export/users/csv', verifyToken, verifyAdmin, async (req, res) => {
     try {
@@ -423,6 +511,242 @@ router.get('/export/users/csv', verifyToken, verifyAdmin, async (req, res) => {
         res.send(csvContent);
     } catch (err) {
         console.error('Error exporting users CSV:', err);
+        res.status(500).json({ success: false, message: 'Error exporting CSV' });
+    }
+});
+
+/**
+ * GET /api/admin/export/monthly/csv
+ * Export combined entries for all users for a particular month/year
+ * 
+ * IMPORTANT: This MUST be declared BEFORE the /:userId routes to prevent
+ * Express from treating the literal string "monthly" as a :userId parameter.
+ */
+router.get('/export/monthly/csv', verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const { month, year } = req.query;
+        if (!month || !year) {
+            return res.status(400).json({ success: false, message: 'Month and Year parameters are required' });
+        }
+
+        const monthNum = parseInt(month);
+        const yearNum = parseInt(year);
+        const startDay = new Date(Date.UTC(yearNum, monthNum - 1, 1));
+        const endDay = new Date(Date.UTC(yearNum, monthNum, 0, 23, 59, 59, 999));
+
+        const entries = await Entry.find({
+            date: { $gte: startDay, $lte: endDay }
+        }).sort({ date: -1 });
+
+        // Enrich with user and category names
+        const enrichedEntries = await Promise.all(entries.map(async (entry) => {
+            const [category, user] = await Promise.all([
+                Category.findById(entry.categoryId).select('name parentCategory'),
+                User.findById(entry.userId).select('name email')
+            ]);
+
+            let catName = category?.name || 'Unknown';
+            if (category?.parentCategory && ['Miscellaneous', 'Savings'].includes(category.parentCategory)) {
+                catName = `${category.parentCategory} → ${catName}`;
+            }
+
+            return {
+                date: new Date(entry.date).toISOString().split('T')[0],
+                userName: user?.name || 'Unknown User',
+                userEmail: user?.email || 'Unknown Email',
+                categoryName: catName,
+                itemName: entry.itemName || '',
+                amount: entry.amount || 0,
+                paymentMode: entry.paymentMode || 'Cash',
+                notes: entry.notes || ''
+            };
+        }));
+
+        const headers = ['Date', 'User Name', 'User Email', 'Category', 'Item Name', 'Amount', 'Payment Mode', 'Notes'];
+        const csvContent = ExportUtils.toCSV(headers, enrichedEntries.map(e => ({
+            'Date': e.date,
+            'User Name': e.userName,
+            'User Email': e.userEmail,
+            'Category': e.categoryName,
+            'Item Name': e.itemName,
+            'Amount': e.amount,
+            'Payment Mode': e.paymentMode,
+            'Notes': e.notes
+        })));
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="all_users_entries_${yearNum}_${String(monthNum).padStart(2, '0')}.csv"`);
+        res.send(csvContent);
+    } catch (err) {
+        console.error('Error exporting monthly report CSV:', err);
+        res.status(500).json({ success: false, message: 'Error exporting monthly report' });
+    }
+});
+
+/**
+ * GET /api/admin/export/:userId/json
+ * Export user data as JSON
+ */
+router.get('/export/:userId/json', verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const uid = toObjectId(req.params.userId);
+        if (!uid) return res.status(400).json({ success: false, message: 'Invalid user ID' });
+
+        const user = await User.findById(uid).select('-password');
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const categories = await Category.find({ userId: uid });
+        const entries = await Entry.find({ userId: uid });
+
+        // Enrich entries with category names
+        const enrichedEntries = await Promise.all(entries.map(async (entry) => {
+            const category = await Category.findById(entry.categoryId);
+            let displayName = category?.name || 'Unknown';
+            if (category?.parentCategory && ['Miscellaneous', 'Savings'].includes(category.parentCategory)) {
+                displayName = `${category.parentCategory} → ${category.name}`;
+            }
+            return {
+                ...entry.toObject(),
+                categoryName: displayName
+            };
+        }));
+
+        const stats = await AnalyticsUtils.getSpendingStats(uid);
+        const categoryDistribution = await AnalyticsUtils.getCategoryDistribution(uid);
+        const monthlySpending = await AnalyticsUtils.getMonthlyTrend(uid);
+        const paymentModes = await AnalyticsUtils.getPaymentModeDistribution(uid);
+
+        const completeData = ExportUtils.generateCompleteExport(
+            user,
+            categories,
+            enrichedEntries,
+            {
+                totalCategories: categories.length,
+                totalEntries: entries.length,
+                totalSpending: stats.totalSpending,
+                averageAmount: stats.averageAmount,
+                categoryDistribution: categoryDistribution.reduce((acc, cat) => {
+                    acc[cat.categoryName] = cat.total;
+                    return acc;
+                }, {}),
+                monthlySpending: monthlySpending.reduce((acc, m) => {
+                    acc[m.month] = m.total;
+                    return acc;
+                }, {}),
+                paymentModes
+            }
+        );
+
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', `attachment; filename="${user.name.replace(/\s+/g, '_')}_export.json"`);
+        res.json(completeData);
+    } catch (err) {
+        console.error('Error exporting JSON:', err);
+        res.status(500).json({ success: false, message: 'Error exporting data' });
+    }
+});
+
+/**
+ * GET /api/admin/export/:userId/csv/entries
+ * Export entries as CSV
+ */
+router.get('/export/:userId/csv/entries', verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const uid = toObjectId(req.params.userId);
+        if (!uid) return res.status(400).json({ success: false, message: 'Invalid user ID' });
+
+        const { month, year } = req.query;
+        const user = await User.findById(uid).select('name');
+        
+        let query = { userId: uid };
+        
+        let targetYear = year ? parseInt(year) : (month ? new Date().getFullYear() : null);
+        if (month && targetYear) {
+            const monthNum = parseInt(month);
+            const startDay = new Date(Date.UTC(targetYear, monthNum - 1, 1));
+            const endDay = new Date(Date.UTC(targetYear, monthNum, 0, 23, 59, 59, 999));
+            query.date = { $gte: startDay, $lte: endDay };
+        } else if (targetYear) {
+            const startDay = new Date(Date.UTC(targetYear, 0, 1));
+            const endDay = new Date(Date.UTC(targetYear, 12, 0, 23, 59, 59, 999));
+            query.date = { $gte: startDay, $lte: endDay };
+        }
+
+        const entries = await Entry.find(query).sort({ date: -1 });
+
+        // Enrich with category names
+        const enrichedEntries = await Promise.all(entries.map(async (entry) => {
+            const category = await Category.findById(entry.categoryId);
+            let displayName = category?.name || 'Unknown';
+            if (category?.parentCategory && ['Miscellaneous', 'Savings'].includes(category.parentCategory)) {
+                displayName = `${category.parentCategory} → ${category.name}`;
+            }
+            return {
+                ...entry.toObject(),
+                categoryName: displayName
+            };
+        }));
+
+        const csvContent = ExportUtils.generateEntriesCSV(enrichedEntries);
+
+        const safeName = (user?.name || req.params.userId).replace(/\s+/g, '_');
+        
+        let fileSuffix = 'entries';
+        if (month) {
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            fileSuffix = `${months[parseInt(month)-1]}`;
+        }
+        if (year) {
+            if (month) fileSuffix += `_${year}`;
+            else fileSuffix = `${year}_entries`;
+        }
+
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${safeName}_${fileSuffix}.csv"`);
+        res.send(csvContent);
+    } catch (err) {
+        console.error('Error exporting CSV:', err);
+        res.status(500).json({ success: false, message: 'Error exporting CSV' });
+    }
+});
+
+/**
+ * GET /api/admin/export/:userId/csv/categories
+ * Export categories as CSV
+ */
+router.get('/export/:userId/csv/categories', verifyToken, verifyAdmin, async (req, res) => {
+    try {
+        const uid = toObjectId(req.params.userId);
+        if (!uid) return res.status(400).json({ success: false, message: 'Invalid user ID' });
+
+        const user = await User.findById(uid).select('name');
+        const categories = await Category.find({ userId: uid });
+
+        // Enrich with stats
+        const enrichedCategories = await Promise.all(categories.map(async (cat) => {
+            const entryCount = await Entry.countDocuments({ categoryId: cat._id });
+            const spendingResult = await Entry.aggregate([
+                { $match: { categoryId: cat._id } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]);
+
+            return {
+                ...cat.toObject(),
+                entryCount,
+                totalSpending: spendingResult[0]?.total || 0
+            };
+        }));
+
+        const csvContent = ExportUtils.generateCategoriesCSV(enrichedCategories);
+
+        const safeName = (user?.name || req.params.userId).replace(/\s+/g, '_');
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="${safeName}_categories.csv"`);
+        res.send(csvContent);
+    } catch (err) {
+        console.error('Error exporting categories CSV:', err);
         res.status(500).json({ success: false, message: 'Error exporting CSV' });
     }
 });

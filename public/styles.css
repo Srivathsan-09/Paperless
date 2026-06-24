@@ -773,28 +773,38 @@ body::after {
 
     /* COMPACT VIEW (Savings & Miscellaneous) */
     .view-container.compact-view {
-        padding-top: 1rem !important;
-        /* Matched Milk Tracker for maximal lift */
+        padding-top: 0.25rem !important;
         max-width: 1600px;
     }
 
     .view-container.compact-view .overhaul-header {
-        margin-bottom: 0 !important;
-        /* Move content up even more */
+        margin: 0.25rem 0 0.25rem 0 !important;
+    }
+
+    /* Make Back button flow normally so it pushes the grid down */
+    .view-container.compact-view .overhaul-tabs-row .back-btn-v3 {
+        position: relative !important;
+        top: auto !important;
+        transform: none !important;
+    }
+
+    .view-container.compact-view .subcategory-grid {
+        margin-bottom: 0.75rem !important;
     }
 
     /* Standardized Recent Expenses Box (Savings & Miscellaneous) */
-    .recent-expenses-container.overhaul-v2 {
-        min-height: 400px;
-        /* Force minimum height for empty states */
-        max-height: 400px;
+    .view-container.compact-view .recent-expenses-container.overhaul-v2 {
+        min-height: auto;
+        max-height: 250px;
+        margin-top: 0.5rem !important;
+        padding: 1rem 1.5rem;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
     }
 
-    .recent-expenses-container.overhaul-v2 .history-scroller {
-        height: 280px !important;
-        /* Fixed height to force internal scrolling */
+    .view-container.compact-view .recent-expenses-container.overhaul-v2 .history-scroller {
+        max-height: 180px !important;
         overflow-y: auto !important;
     }
 }

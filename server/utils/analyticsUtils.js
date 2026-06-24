@@ -5,8 +5,21 @@
  * Optimized for performance with large datasets.
  */
 
+const mongoose = require('mongoose');
 const Entry = require('../models/Entry');
 const Category = require('../models/Category');
+
+/**
+ * Safely convert a value to mongoose ObjectId.
+ * Returns the ObjectId if valid, or null if invalid.
+ */
+function toObjectId(id) {
+    try {
+        return new mongoose.Types.ObjectId(id);
+    } catch (e) {
+        return null;
+    }
+}
 
 const AnalyticsUtils = {
     /**
@@ -15,9 +28,12 @@ const AnalyticsUtils = {
      */
     getMonthlyTrend: async (userId) => {
         try {
+            const uid = toObjectId(userId);
+            if (!uid) return [];
+
             const result = await Entry.aggregate([
                 {
-                    $match: { userId: userId }
+                    $match: { userId: uid }
                 },
                 {
                     $group: {
@@ -54,9 +70,12 @@ const AnalyticsUtils = {
      */
     getCategoryDistribution: async (userId) => {
         try {
+            const uid = toObjectId(userId);
+            if (!uid) return [];
+
             const result = await Entry.aggregate([
                 {
-                    $match: { userId: userId }
+                    $match: { userId: uid }
                 },
                 {
                     $group: {
@@ -103,9 +122,12 @@ const AnalyticsUtils = {
      */
     getSpendingStats: async (userId) => {
         try {
+            const uid = toObjectId(userId);
+            if (!uid) return { totalSpending: 0, entryCount: 0, averageAmount: 0, minAmount: 0, maxAmount: 0 };
+
             const result = await Entry.aggregate([
                 {
-                    $match: { userId: userId }
+                    $match: { userId: uid }
                 },
                 {
                     $group: {
@@ -161,9 +183,12 @@ const AnalyticsUtils = {
      */
     getPaymentModeDistribution: async (userId) => {
         try {
+            const uid = toObjectId(userId);
+            if (!uid) return {};
+
             const result = await Entry.aggregate([
                 {
-                    $match: { userId: userId }
+                    $match: { userId: uid }
                 },
                 {
                     $group: {
@@ -198,10 +223,13 @@ const AnalyticsUtils = {
      */
     getDateRangeStats: async (userId, startDate, endDate) => {
         try {
+            const uid = toObjectId(userId);
+            if (!uid) return { totalSpending: 0, entryCount: 0, averageAmount: 0 };
+
             const stats = await Entry.aggregate([
                 {
                     $match: {
-                        userId: userId,
+                        userId: uid,
                         date: {
                             $gte: new Date(startDate),
                             $lte: new Date(endDate)
@@ -239,9 +267,12 @@ const AnalyticsUtils = {
      */
     getMostUsedCategories: async (userId, limit = 10) => {
         try {
+            const uid = toObjectId(userId);
+            if (!uid) return [];
+
             const result = await Entry.aggregate([
                 {
-                    $match: { userId: userId }
+                    $match: { userId: uid }
                 },
                 {
                     $group: {
@@ -273,7 +304,7 @@ const AnalyticsUtils = {
             return result.map(r => ({
                 categoryName: r.categoryInfo?.name || 'Unknown',
                 count: r.count,
-                percentage: ((r.count / totalCount) * 100).toFixed(2)
+                percentage: totalCount > 0 ? ((r.count / totalCount) * 100).toFixed(2) : 0
             }));
         } catch (err) {
             console.error('Error calculating most used categories:', err);

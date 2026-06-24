@@ -13,8 +13,8 @@ const mongoose = require('mongoose');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
-const Category = require('../models/Category');
-const User = require('../models/User');
+const Category = require('../../server/models/Category');
+const User = require('../../server/models/User');
 
 const PARENT_CATEGORIES_TO_MIGRATE = ['Daily Expenses', 'Utilities & Bills', 'Groceries', 'Health', 'Transportation', 'Education', 'Maintenance', 'Subscriptions'];
 const PROTECTED_PARENTS = ['Miscellaneous', 'Savings'];

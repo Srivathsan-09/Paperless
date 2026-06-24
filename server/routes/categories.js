@@ -68,13 +68,39 @@ router.post('/', verifyToken, async (req, res) => {
 router.get('/', verifyToken, async (req, res) => {
     try {
         const { parent, dashboard } = req.query;
+
+        // Seeding and Integrity Check
+        const count = await Category.countDocuments({ userId: req.user._id });
+        if (count === 0) {
+            const seedList = DEFAULTS;
+            const seedData = seedList.map(d => ({ ...d, userId: req.user._id }));
+            await Category.insertMany(seedData);
+        } else {
+            // Ensure parent categories exist for existing users
+            const parentCategories = ['Miscellaneous', 'Savings'];
+            for (const parentName of parentCategories) {
+                const hasParent = await Category.findOne({ userId: req.user._id, name: parentName, isParent: true });
+                if (!hasParent) {
+                    const newParent = new Category({
+                        userId: req.user._id,
+                        name: parentName,
+                        parentCategory: parentName,
+                        isParent: true,
+                        type: 'general'
+                    });
+                    await newParent.save();
+                }
+            }
+        }
+
         // Base query for the user
         let query = { userId: req.user._id };
 
         // Optimization: Filter at database level
         if (parent) {
-            // Get subcategories of a specific parent
+            // Get subcategories of a specific parent (excluding the parent folder category itself)
             query.parentCategory = parent;
+            query.name = { $ne: parent };
         } else if (dashboard === 'true') {
             // Dashboard: Return top-level categories (parentCategory is null) 
             // PLUS parent categories (Miscellaneous and Savings)
@@ -84,20 +110,7 @@ router.get('/', verifyToken, async (req, res) => {
             ];
         }
 
-        let categories = await Category.find(query).sort({ createdAt: 1 });
-
-        // Robust Seeding: Check for missing defaults and add them
-        // We only seed if the user has ZERO categories total (new user)
-        const count = await Category.countDocuments({ userId: req.user._id });
-
-        if (count === 0) {
-            const seedList = DEFAULTS;
-            const seedData = seedList.map(d => ({ ...d, userId: req.user._id }));
-            await Category.insertMany(seedData);
-            // Re-fetch with original query
-            categories = await Category.find(query).sort({ createdAt: 1 });
-        }
-
+        const categories = await Category.find(query).sort({ createdAt: 1 });
         res.json(categories);
     } catch (err) {
         console.error(err.message);
