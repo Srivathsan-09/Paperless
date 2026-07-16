@@ -4,7 +4,7 @@
   "description": "",
   "main": "script.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "start": "echo \"Use 'vercel dev' to start the serverless project locally\""
   },
   "keywords": [],
@@ -23,6 +23,8 @@
     "passport-google-oauth20": "^2.0.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.3"
+    "@types/node": "^25.0.3",
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2"
   }
 }

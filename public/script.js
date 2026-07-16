@@ -3808,8 +3808,8 @@ async function renderSavingsForm(container, subName, categoryId) {
 
 // Update promptAddCategory to handle parent
 window.promptAddCategory = async function (parentName = null) {
-    const parent = typeof parentName === 'string' ? parentName : 'Daily Expenses'; // Default if null/event
-    const name = await showPrompt(`Enter ${parent === 'Daily Expenses' ? 'Category' : 'Subcategory'} Name:`, "e.g. " + (parent === 'Daily Expenses' ? "Groceries" : "New Item"));
+    const parent = typeof parentName === 'string' ? parentName : null; // Default if null/event
+    const name = await showPrompt(`Enter ${!parent ? 'Category' : 'Subcategory'} Name:`, "e.g. " + (!parent ? "Groceries" : "New Item"));
     if (!name) return;
 
     try {

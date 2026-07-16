@@ -398,6 +398,47 @@
         .truncate { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px; }
         .mono { font-family:'Courier New',monospace; font-size:0.78rem; color:var(--text3); }
 
+        /* Menu Toggle Button & Overlay styles */
+        .page-hdr-title-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .menu-toggle-btn {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 8px;
+        }
+        .menu-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent);
+            color: var(--accent2);
+        }
+        .menu-toggle-btn:active {
+            transform: scale(0.95);
+        }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 998;
+            transition: opacity 0.3s ease;
+        }
+
         @media (max-width:860px) {
             .admin-wrap { grid-template-columns:1fr; }
             .sidebar {
@@ -405,6 +446,8 @@
                 height:100vh; z-index:999; width:var(--sidebar-w);
             }
             .sidebar.open { display:flex; }
+            .sidebar-overlay.open { display:block; }
+            .menu-toggle-btn { display:inline-flex; }
             .main { padding:16px; }
             .chart-grid { grid-template-columns:1fr; }
         }
@@ -458,13 +501,21 @@
         </div>
     </aside>
 
+    <!-- SIDEBAR OVERLAY -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(event)"></div>
+
     <!-- MAIN -->
     <main class="main">
 
         <!-- ====== DASHBOARD ====== -->
         <div id="dashboard" class="section active">
             <div class="page-hdr">
-                <h1>Dashboard <span>Overview</span></h1>
+                <div class="page-hdr-title-wrap">
+                    <button class="menu-toggle-btn" onclick="toggleSidebar(event)" aria-label="Open menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
+                    <h1>Dashboard <span>Overview</span></h1>
+                </div>
                 <button class="btn btn-outline btn-sm" onclick="loadDashboard()">↻ Refresh</button>
             </div>
 
@@ -527,7 +578,12 @@
             <!-- User LIST -->
             <div id="userListView">
                 <div class="page-hdr">
-                    <h1>Users</h1>
+                    <div class="page-hdr-title-wrap">
+                        <button class="menu-toggle-btn" onclick="toggleSidebar(event)" aria-label="Open menu">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                        </button>
+                        <h1>Users</h1>
+                    </div>
                     <div class="filter-row">
                         <button id="bulkDeleteBtn" class="btn btn-danger btn-sm" style="display:none; align-items:center; gap:5px;" onclick="bulkDeleteUsers()">Delete Selected (<span id="bulkDeleteCount">0</span>)</button>
                         <input type="text" id="userSearch" class="inp" placeholder="🔍 Search name, email, or user ID…" style="width:260px;" oninput="debounceUsers()">
@@ -571,7 +627,12 @@
         <!-- ====== DATA EXPLORER ====== -->
         <div id="explorer" class="section">
             <div class="page-hdr">
-                <h1>Data <span>Explorer</span></h1>
+                <div class="page-hdr-title-wrap">
+                    <button class="menu-toggle-btn" onclick="toggleSidebar(event)" aria-label="Open menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
+                    <h1>Data <span>Explorer</span></h1>
+                </div>
             </div>
 
             <!-- Explorer: pick a user -->
@@ -599,7 +660,12 @@
         <!-- ====== EXPORT ====== -->
         <div id="export" class="section">
             <div class="page-hdr">
-                <h1>Export <span>Data</span></h1>
+                <div class="page-hdr-title-wrap">
+                    <button class="menu-toggle-btn" onclick="toggleSidebar(event)" aria-label="Open menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                    </button>
+                    <h1>Export <span>Data</span></h1>
+                </div>
             </div>
 
             <div class="panel mb-4">
@@ -805,9 +871,23 @@ function showSection(id, btn) {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     (btn || document.getElementById(`nav-${id}`))?.classList.add('active');
 
+    // Auto-close sidebar on mobile
+    document.getElementById('sidebar')?.classList.remove('open');
+    document.getElementById('sidebarOverlay')?.classList.remove('open');
+
     if (id === 'users') loadUsers(1);
     if (id === 'explorer') loadExplorerUsers();
     if (id === 'export') loadExportUsers();
+}
+
+function toggleSidebar(event) {
+    if (event) event.stopPropagation();
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('open');
+    }
 }
 
 // ════════════════════════════════════════════════
