@@ -27,7 +27,7 @@ module.exports = function () {
           if (!user) {
             // STRICT ENFORCEMENT: ONLY 'signup' mode creates a user
             if (mode === 'signup') {
-              console.log(`✅ Mode is SIGNUP & User not found -> Creating new account for: ${emails[0].value}`);
+              console.log(`Mode is SIGNUP & User not found -> Creating new account for: ${emails[0].value}`);
               const adminEmails = (process.env.DEFAULT_ADMIN_EMAILS || '')
                 .split(',')
                 .map(email => email.trim().toLowerCase())
@@ -57,11 +57,11 @@ module.exports = function () {
               user.isNewUser = true;
             } else {
               // mode is 'login' or unspecified, but account doesn't exist
-              console.warn(`❌ Login failed: Account not found for ${emails[0].value} (Mode: ${mode})`);
+              console.warn(`Login failed: Account not found for ${emails[0].value} (Mode: ${mode})`);
               return done(null, false, { message: 'Account not found. Please sign up first.' });
             }
           } else {
-            console.log(`✅ User found: ${user.email}. Logging in...`);
+            console.log(`User found: ${user.email}. Logging in...`);
             const normalizedEmail = (emails[0].value || '').toLowerCase();
             const defaultAdminEmails = (process.env.DEFAULT_ADMIN_EMAILS || '')
               .split(',')

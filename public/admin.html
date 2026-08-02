@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Paperless — Admin Panel</title>
     <meta name="description" content="Paperless Admin Panel — manage users, explore data, and export records.">
     <link rel="icon" type="image/png" href="Logo2.png">
@@ -459,7 +462,7 @@
 <!-- AUTH GATE -->
 <div id="authGate" class="auth-gate">
     <div class="auth-card" id="authCard">
-        <div class="icon">🔐</div>
+        <div class="icon"></div>
         <h2>Verifying access…</h2>
         <p>Please wait while we confirm your admin privileges.</p>
     </div>
@@ -524,17 +527,17 @@
                 <div class="stat-card c-purple">
                     <div class="stat-label">Total Users</div>
                     <div class="stat-value" id="s-users">—</div>
-                    <div class="stat-icon">👥</div>
+                    <div class="stat-icon"></div>
                 </div>
                 <div class="stat-card c-blue">
                     <div class="stat-label">Total Categories</div>
                     <div class="stat-value" id="s-cats">—</div>
-                    <div class="stat-icon">📂</div>
+                    <div class="stat-icon"></div>
                 </div>
                 <div class="stat-card c-green">
                     <div class="stat-label">Total Entries</div>
                     <div class="stat-value" id="s-entries">—</div>
-                    <div class="stat-icon">📝</div>
+                    <div class="stat-icon"></div>
                 </div>
                 <div class="stat-card c-amber">
                     <div class="stat-label">Total Spending</div>
@@ -544,7 +547,7 @@
                 <div class="stat-card c-red">
                     <div class="stat-label">Avg / User</div>
                     <div class="stat-value" id="s-avg">—</div>
-                    <div class="stat-icon">📈</div>
+                    <div class="stat-icon"></div>
                 </div>
             </div>
 
@@ -559,7 +562,7 @@
             <!-- Recent registrations -->
             <div class="panel">
                 <div class="panel-hdr">
-                    <h2>🆕 Recent Registrations</h2>
+                    <h2>Recent Registrations</h2>
                 </div>
                 <div class="table-wrap">
                     <table>
@@ -586,7 +589,7 @@
                     </div>
                     <div class="filter-row">
                         <button id="bulkDeleteBtn" class="btn btn-danger btn-sm" style="display:none; align-items:center; gap:5px;" onclick="bulkDeleteUsers()">Delete Selected (<span id="bulkDeleteCount">0</span>)</button>
-                        <input type="text" id="userSearch" class="inp" placeholder="🔍 Search name, email, or user ID…" style="width:260px;" oninput="debounceUsers()">
+                        <input type="text" id="userSearch" class="inp" placeholder="Search name, email, or user ID…" style="width:260px;" oninput="debounceUsers()">
                         <button class="btn btn-outline btn-sm" onclick="loadUsers(1)">↻ Refresh</button>
                     </div>
                 </div>
@@ -640,7 +643,7 @@
                 <div class="panel">
                     <div class="panel-hdr">
                         <h2>Select a User</h2>
-                        <input type="text" id="explorerSearch" class="inp" placeholder="🔍 Search users…" style="width:220px;" oninput="filterExplorerCards()">
+                        <input type="text" id="explorerSearch" class="inp" placeholder="Search users…" style="width:220px;" oninput="filterExplorerCards()">
                     </div>
                     <div class="panel-body">
                         <div class="explorer-user-grid" id="explorerGrid">
@@ -669,15 +672,15 @@
             </div>
 
             <div class="panel mb-4">
-                <div class="panel-hdr"><h2>📋 All Users Report</h2></div>
+                <div class="panel-hdr"><h2>All Users Report</h2></div>
                 <div class="panel-body">
                     <p class="text-muted" style="margin-bottom:14px;">Download a complete summary of all registered users with their spending stats.</p>
-                    <button class="btn btn-primary" onclick="doExport('/api/admin/export/users/csv','all_users.csv')">📥 Download All Users CSV</button>
+                    <button class="btn btn-primary" onclick="doExport('/api/admin/export/users/csv','all_users.csv')">Download All Users CSV</button>
                 </div>
             </div>
 
             <div class="panel mb-4">
-                <div class="panel-hdr"><h2>📅 Combined Monthly Entries Report</h2></div>
+                <div class="panel-hdr"><h2>Combined Monthly Entries Report</h2></div>
                 <div class="panel-body">
                     <p class="text-muted" style="margin-bottom:14px;">Download a combined CSV report of all user entries/transactions for a selected month and year.</p>
                     <div class="filter-row" style="margin-bottom:14px;">
@@ -698,15 +701,15 @@
                             <option value="2021">2021</option>
                             <option value="2020">2020</option>
                         </select>
-                        <button class="btn btn-primary" onclick="exportCombinedMonthly()">📥 Download Monthly Report</button>
+                        <button class="btn btn-primary" onclick="exportCombinedMonthly()">Download Monthly Report</button>
                     </div>
                 </div>
             </div>
 
             <div class="panel">
                 <div class="panel-hdr">
-                    <h2>👤 Per-User Report</h2>
-                    <input type="text" id="exportSearch" class="inp" placeholder="🔍 Search user…" style="width:210px;" oninput="filterExportGrid()">
+                    <h2>Per-User Report</h2>
+                    <input type="text" id="exportSearch" class="inp" placeholder="Search user…" style="width:210px;" oninput="filterExportGrid()">
                 </div>
                 <div class="panel-body">
                     <div class="export-grid" id="exportGrid">
@@ -725,7 +728,7 @@
 <!-- Custom Confirm Modal -->
 <div id="confirmModal" class="modal-backdrop">
     <div class="modal-box">
-        <div class="modal-icon">⚠️</div>
+        <div class="modal-icon"></div>
         <h3 id="confirmTitle">Delete User</h3>
         <p id="confirmMessage">Are you sure you want to permanently delete this user?</p>
         <div class="modal-actions">
@@ -813,7 +816,7 @@ function showGate(title, msg, isErr = false, showLogin = false) {
     const card = document.getElementById('authCard');
     card.className = `auth-card${isErr ? ' error' : ''}`;
     card.innerHTML = `
-        <div class="icon">${isErr ? '🚫' : '🔐'}</div>
+        <div class="icon">${isErr ? '' : ''}</div>
         <h2>${esc(title)}</h2>
         <p>${esc(msg)}</p>
         ${showLogin ? `<button class="btn btn-primary" style="margin-top:4px;" onclick="location.href='Loginpage.html'">Go to Login</button>` : ''}
@@ -932,7 +935,7 @@ async function loadDashboard() {
             const { users } = await r3.json();
             const tbody = document.getElementById('recentUsers');
             if (!users.length) {
-                tbody.innerHTML = `<tr><td colspan="5">${emptyState('👤', 'No users yet.')}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5">${emptyState('', 'No users yet.')}</td></tr>`;
             } else {
                 tbody.innerHTML = users.map(u => `
                     <tr>
@@ -980,7 +983,7 @@ async function loadUsers(page = 1) {
         const { users, pagination } = await res.json();
 
         if (!users.length) {
-            tbody.innerHTML = `<tr><td colspan="10">${emptyState('👤', 'No users found.')}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="10">${emptyState('', 'No users found.')}</td></tr>`;
             document.getElementById('usersPag').innerHTML = '';
             return;
         }
@@ -1018,7 +1021,7 @@ async function loadUsers(page = 1) {
         renderPag('usersPag', pagination, p => loadUsers(p));
     } catch (err) {
         if (err.message === 'Unauthorized' || err.message === 'Forbidden') return;
-        tbody.innerHTML = `<tr><td colspan="10">${emptyState('⚠️', 'Failed to load users. Please try again.')}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10">${emptyState('', 'Failed to load users. Please try again.')}</td></tr>`;
         console.error('Users load error:', err);
     }
 }
@@ -1178,7 +1181,7 @@ async function deleteUser(userId, userName, redirectBack = false) {
             const data = await res.json();
             
             if (res.ok && data.success) {
-                toast(`🗑️ User "${userName}" deleted successfully`, 'ok');
+                toast(`User "${userName}" deleted successfully`, 'ok');
                 if (redirectBack) {
                     backToUserList();
                     if (typeof backToExplorer === 'function') backToExplorer();
@@ -1233,10 +1236,10 @@ async function renderUserDetail(userId, containerId, onBack) {
 
             <!-- Stat cards -->
             <div class="stats-row">
-                <div class="stat-card c-purple"><div class="stat-label">Categories</div><div class="stat-value">${stats.categoryCount||0}</div><div class="stat-icon">📂</div></div>
-                <div class="stat-card c-green"><div class="stat-label">Entries</div><div class="stat-value">${(stats.entryCount||0).toLocaleString('en-IN')}</div><div class="stat-icon">📝</div></div>
+                <div class="stat-card c-purple"><div class="stat-label">Categories</div><div class="stat-value">${stats.categoryCount||0}</div><div class="stat-icon"></div></div>
+                <div class="stat-card c-green"><div class="stat-label">Entries</div><div class="stat-value">${(stats.entryCount||0).toLocaleString('en-IN')}</div><div class="stat-icon"></div></div>
                 <div class="stat-card c-blue"><div class="stat-label">Total Spending</div><div class="stat-value">${fmt(stats.totalSpending)}</div><div class="stat-icon">₹</div></div>
-                <div class="stat-card c-amber"><div class="stat-label">Avg Entry</div><div class="stat-value">${fmt(Math.round(stats.averageAmount||0))}</div><div class="stat-icon">📈</div></div>
+                <div class="stat-card c-amber"><div class="stat-label">Avg Entry</div><div class="stat-value">${fmt(Math.round(stats.averageAmount||0))}</div><div class="stat-icon"></div></div>
             </div>
 
             <!-- Charts -->
@@ -1306,7 +1309,7 @@ async function renderUserDetail(userId, containerId, onBack) {
 
     } catch (err) {
         if (err.message === 'Unauthorized' || err.message === 'Forbidden') return;
-        container.innerHTML = emptyState('⚠️', 'Failed to load user data. Please try again.');
+        container.innerHTML = emptyState('', 'Failed to load user data. Please try again.');
         console.error('User detail error:', err);
     }
 }
@@ -1326,7 +1329,7 @@ async function loadDetailCategories(userId) {
         if (!res.ok) throw new Error();
         const { categories } = await res.json();
         if (!categories.length) {
-            tbody.innerHTML = `<tr><td colspan="6">${emptyState('📂', 'No categories yet.')}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6">${emptyState('', 'No categories yet.')}</td></tr>`;
             return;
         }
         tbody.innerHTML = categories.map(c => `
@@ -1341,7 +1344,7 @@ async function loadDetailCategories(userId) {
         `).join('');
     } catch (err) {
         if (err.message === 'Unauthorized' || err.message === 'Forbidden') return;
-        tbody.innerHTML = `<tr><td colspan="6">${emptyState('⚠️', 'Failed to load categories.')}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6">${emptyState('', 'Failed to load categories.')}</td></tr>`;
     }
 }
 
@@ -1363,7 +1366,7 @@ async function loadDetailEntries(userId, page = 1) {
         const { entries, pagination } = await res.json();
 
         if (!entries.length) {
-            tbody.innerHTML = `<tr><td colspan="6">${emptyState('📭', 'No entries found for this filter.')}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6">${emptyState('', 'No entries found for this filter.')}</td></tr>`;
             pagEl.innerHTML = '';
             return;
         }
@@ -1383,7 +1386,7 @@ async function loadDetailEntries(userId, page = 1) {
         buildEntryPag(pagEl, pagination, userId);
     } catch (err) {
         if (err.message === 'Unauthorized' || err.message === 'Forbidden') return;
-        tbody.innerHTML = `<tr><td colspan="6">${emptyState('⚠️', 'Failed to load entries.')}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6">${emptyState('', 'Failed to load entries.')}</td></tr>`;
     }
 }
 
@@ -1470,7 +1473,7 @@ async function loadExplorerUsers() {
         renderExplorerGrid(users);
     } catch (err) {
         if (err.message === 'Unauthorized' || err.message === 'Forbidden') return;
-        grid.innerHTML = emptyState('⚠️', 'Failed to load users.');
+        grid.innerHTML = emptyState('', 'Failed to load users.');
     }
 }
 
@@ -1485,7 +1488,7 @@ function filterExplorerCards() {
 
 function renderExplorerGrid(users) {
     const grid = document.getElementById('explorerGrid');
-    if (!users.length) { grid.innerHTML = emptyState('🔍', 'No users match your search.'); return; }
+    if (!users.length) { grid.innerHTML = emptyState('', 'No users match your search.'); return; }
     grid.innerHTML = users.map(u => `
         <div class="explorer-user-card" onclick="openExplorerDetail('${u._id}')">
             <div class="flex items-center gap-2" style="margin-bottom:8px; min-width:0;">
@@ -1545,7 +1548,7 @@ async function loadExportUsers() {
         renderExportGrid(users);
     } catch (err) {
         if (err.message === 'Unauthorized' || err.message === 'Forbidden') return;
-        grid.innerHTML = emptyState('⚠️', 'Failed to load users.');
+        grid.innerHTML = emptyState('', 'Failed to load users.');
     }
 }
 
@@ -1559,15 +1562,15 @@ function filterExportGrid() {
 
 function renderExportGrid(users) {
     const grid = document.getElementById('exportGrid');
-    if (!users.length) { grid.innerHTML = emptyState('🔍', 'No users found.'); return; }
+    if (!users.length) { grid.innerHTML = emptyState('', 'No users found.'); return; }
     grid.innerHTML = users.map(u => `
         <div class="export-card">
             <h4>${esc(u.name)}</h4>
             <p>${esc(u.email)} · ${u.entryCount||0} entries · ${fmt(u.totalSpending)}</p>
             <div class="btn-row">
-                <button class="btn btn-outline btn-sm" onclick="doExport('${API}/export/${u._id}/json','${esc(u.name)}')">📄 JSON</button>
-                <button class="btn btn-outline btn-sm" onclick="doExport('${API}/export/${u._id}/csv/entries','${esc(u.name)}')">📊 Entries</button>
-                <button class="btn btn-outline btn-sm" onclick="doExport('${API}/export/${u._id}/csv/categories','${esc(u.name)}')">📁 Categories</button>
+                <button class="btn btn-outline btn-sm" onclick="doExport('${API}/export/${u._id}/json','${esc(u.name)}')">JSON</button>
+                <button class="btn btn-outline btn-sm" onclick="doExport('${API}/export/${u._id}/csv/entries','${esc(u.name)}')">Entries</button>
+                <button class="btn btn-outline btn-sm" onclick="doExport('${API}/export/${u._id}/csv/categories','${esc(u.name)}')">Categories</button>
             </div>
         </div>
     `).join('');
@@ -1625,10 +1628,10 @@ async function doExport(url, name) {
         document.body.appendChild(a);
         a.click(); a.remove();
         URL.revokeObjectURL(a.href);
-        toast(`✅ Downloaded: ${a.download}`, 'ok');
+        toast(`Downloaded: ${a.download}`, 'ok');
     } catch (err) {
         if (err.message === 'Unauthorized' || err.message === 'Forbidden') return;
-        toast('❌ Download failed. Please try again.', 'err');
+        toast('Download failed. Please try again.', 'err');
         console.error('Export error:', err);
     }
 }

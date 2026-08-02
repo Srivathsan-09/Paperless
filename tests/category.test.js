@@ -106,6 +106,29 @@ describe('Category API tests', () => {
         expect(dbCat).toBeNull();
     });
 
+    test('Category created with invalid parent (like Daily Expenses) defaults to parentCategory null and shows on dashboard', async () => {
+        const createRes = await request(app)
+            .post('/api/categories')
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                name: 'Food',
+                parentCategory: 'Daily Expenses',
+                type: 'general'
+            });
+
+        expect(createRes.status).toBe(200);
+        expect(createRes.body.name).toBe('Food');
+        expect(createRes.body.parentCategory).toBeNull();
+
+        const dashRes = await request(app)
+            .get('/api/categories?dashboard=true')
+            .set('Authorization', `Bearer ${token}`);
+
+        expect(dashRes.status).toBe(200);
+        const names = dashRes.body.map(c => c.name);
+        expect(names).toContain('Food');
+    });
+
     test('Invalid category delete returns 404', async () => {
         const fakeId = new mongoose.Types.ObjectId();
         const res = await request(app)

@@ -47,9 +47,15 @@ router.post('/', verifyToken, async (req, res) => {
     try {
         const { parentCategory, name, type, isParent } = req.body;
 
+        const VALID_PARENTS = ['Miscellaneous', 'Savings'];
+        let finalParent = parentCategory || null;
+        if (finalParent && !VALID_PARENTS.includes(finalParent)) {
+            finalParent = null;
+        }
+
         const newCategory = new Category({
             userId: req.user._id,
-            parentCategory: parentCategory || null,  // Default to null for top-level categories
+            parentCategory: finalParent,  // Default to null for top-level categories
             name,
             type: type || 'general',
             isParent: isParent || false
@@ -69,6 +75,17 @@ router.get('/', verifyToken, async (req, res) => {
     try {
         const { parent, dashboard } = req.query;
 
+        const VALID_PARENTS = ['Miscellaneous', 'Savings'];
+
+        // Auto-repair any categories with invalid/deprecated parent categories for this user
+        await Category.updateMany(
+            { 
+                userId: req.user._id, 
+                parentCategory: { $nin: [...VALID_PARENTS, null] } 
+            },
+            { $set: { parentCategory: null } }
+        );
+
         // Seeding and Integrity Check
         const count = await Category.countDocuments({ userId: req.user._id });
         if (count === 0) {
@@ -77,8 +94,7 @@ router.get('/', verifyToken, async (req, res) => {
             await Category.insertMany(seedData);
         } else {
             // Ensure parent categories exist for existing users
-            const parentCategories = ['Miscellaneous', 'Savings'];
-            for (const parentName of parentCategories) {
+            for (const parentName of VALID_PARENTS) {
                 const hasParent = await Category.findOne({ userId: req.user._id, name: parentName, isParent: true });
                 if (!hasParent) {
                     const newParent = new Category({
@@ -102,10 +118,11 @@ router.get('/', verifyToken, async (req, res) => {
             query.parentCategory = parent;
             query.name = { $ne: parent };
         } else if (dashboard === 'true') {
-            // Dashboard: Return top-level categories (parentCategory is null) 
+            // Dashboard: Return top-level categories (parentCategory is null or invalid parent) 
             // PLUS parent categories (Miscellaneous and Savings)
             query.$or = [
                 { parentCategory: null },  // Top-level regular categories
+                { parentCategory: { $nin: VALID_PARENTS } }, // Fallback safety for any non-folder parent
                 { isParent: true }         // Parent categories (Miscellaneous, Savings)
             ];
         }

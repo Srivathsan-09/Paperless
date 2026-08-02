@@ -1852,6 +1852,7 @@ async function renderModuleContent(subName, categoryId, container, customBackAct
 
 
 async function renderSpendingSummary(container) {
+    STATE.activeCategory = null; // Reset active category so global export is triggered
     const monthStr = `${STATE.selectedYear}-${String(STATE.selectedMonth + 1).padStart(2, '0')}`;
     let allEntries = [];
 
@@ -1883,7 +1884,7 @@ async function renderSpendingSummary(container) {
             </div>
 
             <div class="ss-footer">
-                <button class="ss-export-hero-btn" onclick="exportToPDF()">
+                <button class="ss-export-hero-btn" onclick="exportToPDF(true)">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     Export Report
                 </button>
@@ -3296,7 +3297,8 @@ function getRelativeDate(dateString) {
 
 // --- PDF EXPORT ---
 
-async function exportToPDF() {
+async function exportToPDF(forceGlobal = false) {
+    const isGlobalExport = forceGlobal === true || !STATE.activeCategory;
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
@@ -3307,7 +3309,7 @@ async function exportToPDF() {
     let monthlyData = [];
 
     try {
-        if (STATE.activeCategory) {
+        if (!isGlobalExport && STATE.activeCategory) {
             // --- CONTEXTUAL EXPORT (Category Only) ---
             const cat = STATE.categories.find(c => c.id === STATE.activeCategory || c._id === STATE.activeCategory);
             const catName = cat ? cat.name : STATE.activeCategory;
@@ -3407,11 +3409,52 @@ async function exportToPDF() {
 
         } else {
             // --- GLOBAL EXPORT (All Categories) ---
-            const parents = ['Daily Expenses', 'Utilities & Bills', 'Groceries', 'House Maintenance', 'Education', 'Health', 'Transportation', 'Occasional & Events', 'Subscriptions', 'Miscellaneous', 'Savings', 'Milk'];
-            const entriesResults = await Promise.all(parents.map(async p => {
-                return await fetchAPI(`/api/entries?parentCategory=${encodeURIComponent(p)}&month=${monthStr}`);
-            }));
-            let allRaw = entriesResults.flat();
+            let allRaw = [];
+            if (STATE.currentMonthEntries && STATE.currentMonthEntries.length > 0) {
+                allRaw = [...STATE.currentMonthEntries];
+            } else {
+                const res = await fetchAPI(`/api/entries?month=${monthStr}`);
+                allRaw = Array.isArray(res) ? res : (res.entries || []);
+            }
+
+            // Ensure categories are cached in STATE
+            if (!STATE.categories || STATE.categories.length === 0) {
+                try {
+                    STATE.categories = await fetchCategories();
+                } catch (e) { console.error(e); }
+            }
+
+            // Helper for category name resolution
+            const resolveCatName = (d) => {
+                if (!d) return 'General';
+                let cat = null;
+                if (STATE.categories && STATE.categories.length > 0) {
+                    cat = STATE.categories.find(c => 
+                        (c._id && d.categoryId && c._id.toString() === d.categoryId.toString()) ||
+                        (c.id && d.categoryId && c.id.toString() === d.categoryId.toString()) ||
+                        (c.name && d.categoryName && c.name.toLowerCase() === d.categoryName.toLowerCase()) ||
+                        (c.name && d.category && c.name.toLowerCase() === d.category.toLowerCase())
+                    );
+                }
+                if (cat) {
+                    if (cat.parentCategory && ['Miscellaneous', 'Savings'].includes(cat.parentCategory)) {
+                        return `${cat.parentCategory} → ${cat.name}`;
+                    }
+                    return cat.name;
+                }
+                if (d.parentCategory && ['Miscellaneous', 'Savings'].includes(d.parentCategory)) {
+                    return d.parentCategory;
+                }
+                return d.categoryName || d.parentCategory || d.category || 'General';
+            };
+
+            const resolveItemName = (d) => {
+                if (!d) return 'Expense';
+                if (d.itemName && d.itemName.trim() && d.itemName !== 'Expense') return d.itemName.trim();
+                if (d.notes && d.notes.trim()) return d.notes.trim();
+                if (d.subCategory && d.subCategory.trim()) return d.subCategory.trim();
+                return resolveCatName(d);
+            };
 
             // FILTER LOGIC FOR PDF - Respect STATE.summaryFilter
             const filter = STATE.summaryFilter || 'All';
@@ -3442,7 +3485,7 @@ async function exportToPDF() {
             let grandTotal = 0;
 
             monthlyData.forEach(d => {
-                const catName = d.parentCategory || d.category || 'Other';
+                const catName = resolveCatName(d);
                 totalsByCategory[catName] = (totalsByCategory[catName] || 0) + d.amount;
                 grandTotal += d.amount;
             });
@@ -3468,9 +3511,9 @@ async function exportToPDF() {
                 .sort((a, b) => new Date(a.date) - new Date(b.date))
                 .map(h => [
                     formatISTDate(h.date),
-                    h.itemName || h.notes || h.subCategory || 'Expense',
-                    h.parentCategory || h.category || '-',
-                    h.paymentMode || 'Cash', // Add Mode column
+                    resolveItemName(h),
+                    resolveCatName(h),
+                    h.paymentMode || 'Cash',
                     `₹${h.amount.toLocaleString()}`
                 ]);
 
@@ -3808,7 +3851,10 @@ async function renderSavingsForm(container, subName, categoryId) {
 
 // Update promptAddCategory to handle parent
 window.promptAddCategory = async function (parentName = null) {
-    const parent = typeof parentName === 'string' ? parentName : null; // Default if null/event
+    let parent = typeof parentName === 'string' ? parentName : null; // Default if null/event
+    if (parent && !['Miscellaneous', 'Savings'].includes(parent)) {
+        parent = null;
+    }
     const name = await showPrompt(`Enter ${!parent ? 'Category' : 'Subcategory'} Name:`, "e.g. " + (!parent ? "Groceries" : "New Item"));
     if (!name) return;
 

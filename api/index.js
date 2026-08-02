@@ -9,7 +9,7 @@ const connectDB = require('../server/config/db');
 const requiredEnv = ['MONGODB_URI', 'JWT_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'];
 const missingEnv = requiredEnv.filter(env => !process.env[env]);
 if (missingEnv.length > 0) {
-    console.error(`❌ Missing required environment variables: ${missingEnv.join(', ')}`);
+    console.error(`Missing required environment variables: ${missingEnv.join(', ')}`);
 }
 
 // Initialize Express app
@@ -82,6 +82,14 @@ app.use(cors({
 // Optimize body parser limits for serverless
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Anti-caching headers middleware for all requests
+app.use((req, res, next) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+});
 
 // Initialize Passport (without sessions since we're using JWT)
 app.use(passport.initialize());
@@ -163,7 +171,7 @@ app.post('/api/setup/promote-admin', async (req, res) => {
 
         res.json({
             success: true,
-            message: `✅ ${user.name} (${user.email}) promoted to admin.`,
+            message: `${user.name} (${user.email}) promoted to admin.`,
             user: { id: user._id, name: user.name, email: user.email, isAdmin: user.isAdmin }
         });
     } catch (err) {
