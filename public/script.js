@@ -2568,15 +2568,27 @@ async function renderMilkTracker(container, searchRange = null, page = 1) {
 
             <div class="overhaul-main-card">
                 <div class="overhaul-top-nav" style="${STATE.milkSubView === 'analysis' ? 'display: none;' : ''}">
-                    <!-- Month Selector (Left) -->
-                    <div class="milk-month-pill">
-                        <button class="milk-nav-arrow" onclick="navMonth(-1)">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-                        </button>
-                        <span class="milk-month-label">${MONTHS[STATE.selectedMonth]} ${STATE.selectedYear}</span>
-                        <button class="milk-nav-arrow" onclick="navMonth(1)">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-                        </button>
+                    <!-- Month Selector & Price Box (Left) -->
+                    <div class="milk-controls-left">
+                        <div class="milk-month-pill">
+                            <button class="milk-nav-arrow" onclick="navMonth(-1)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                            </button>
+                            <span class="milk-month-label">${MONTHS[STATE.selectedMonth]} ${STATE.selectedYear}</span>
+                            <button class="milk-nav-arrow" onclick="navMonth(1)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                            </button>
+                        </div>
+
+                        <div class="milk-price-pill" title="Set default milk price per litre for ${MONTHS[STATE.selectedMonth]} ${STATE.selectedYear}">
+                            <span class="price-pill-label">Price / L:</span>
+                            <span class="price-currency-symbol">₹</span>
+                            <input type="number" id="monthlyPriceInput" class="monthly-price-input" 
+                                   value="${getMilkPriceForMonth(STATE.selectedYear, STATE.selectedMonth)}" 
+                                   step="0.5" min="0" placeholder="48"
+                                   onchange="handleMonthlyPriceChange(this.value, '${targetId}')"
+                                   onkeydown="if(event.key==='Enter') { this.blur(); }">
+                        </div>
                     </div>
 
                     <!-- Horizontal Search Form (Right) -->
@@ -2938,6 +2950,66 @@ function shiftMonth(delta, containerId) {
 
 
 
+function getMilkPriceForMonth(year, month) {
+    const key = `MILK_PRICE_${year}_${month}`;
+    const stored = localStorage.getItem(key);
+    if (stored !== null && stored !== undefined && !isNaN(parseFloat(stored))) {
+        return parseFloat(stored);
+    }
+    const defaultPrice = localStorage.getItem('MILK_DEFAULT_PRICE');
+    if (defaultPrice !== null && defaultPrice !== undefined && !isNaN(parseFloat(defaultPrice))) {
+        return parseFloat(defaultPrice);
+    }
+    return 48;
+}
+
+async function handleMonthlyPriceChange(val, targetId) {
+    const parsed = parseFloat(val);
+    if (isNaN(parsed) || parsed < 0) {
+        showToast('Please enter a valid price', 'warning');
+        return;
+    }
+
+    const key = `MILK_PRICE_${STATE.selectedYear}_${STATE.selectedMonth}`;
+    localStorage.setItem(key, parsed);
+    localStorage.setItem('MILK_DEFAULT_PRICE', parsed);
+
+    // Update existing entries in the current month to use the new price
+    if (STATE.tempMilkData && STATE.tempMilkData.length > 0) {
+        const updatePromises = STATE.tempMilkData.map(async (entry) => {
+            const m = entry.morningLitres || 0;
+            const n = entry.nightLitres || 0;
+            const totalQty = entry.quantity || (m + n);
+            const newTotalAmount = parsed * totalQty;
+
+            const updatedEntry = {
+                ...entry,
+                pricePerLitre: parsed,
+                amount: newTotalAmount
+            };
+
+            try {
+                await fetchAPI(`/api/entries/${entry._id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(updatedEntry)
+                });
+            } catch (err) {
+                console.error(`Failed to update price for entry ${entry._id}`, err);
+            }
+        });
+
+        await Promise.all(updatePromises);
+        showToast(`Updated price to ₹${parsed}/L for all entries in ${MONTHS[STATE.selectedMonth]}`, 'success');
+    } else {
+        showToast(`Price set to ₹${parsed}/L for ${MONTHS[STATE.selectedMonth]}`, 'info');
+    }
+
+    const targetEl = document.getElementById(targetId) || document.getElementById('categoryToolContainer');
+    if (targetEl) {
+        renderMilkTracker(targetEl);
+    }
+}
+
 // Helper to open form by explicit date (prevents issues with selectedMonth/Year during search)
 function openMilkFormByDate(dateStr, existingId) {
     const [y, m, d] = dateStr.split('-').map(Number);
@@ -2965,7 +3037,7 @@ function openMilkForm(day, existingId, onClose = null) {
     // Default values
     const mQty = existing?.morningLitres || 0;
     const nQty = existing?.nightLitres || 0;
-    const price = existing?.pricePerLitre || 48; // Default to 48 if not set
+    const price = existing?.pricePerLitre || getMilkPriceForMonth(STATE.selectedYear, STATE.selectedMonth);
     const notes = existing?.notes || '';
 
     overlay.classList.add('active');

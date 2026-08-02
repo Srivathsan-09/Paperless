@@ -2072,6 +2072,13 @@ textarea:focus {
     border-bottom: 1px solid var(--border);
 }
 
+.milk-controls-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
 .milk-month-pill {
     display: flex;
     align-items: center;
@@ -2080,6 +2087,58 @@ textarea:focus {
     background: var(--bg-color);
     border-radius: 12px;
     border: 1px solid var(--border);
+}
+
+.milk-price-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.85rem;
+    background: var(--bg-card, #ffffff);
+    border-radius: 12px;
+    border: 1px solid var(--border, #e2e8f0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dark-theme .milk-price-pill {
+    background: var(--bg-card, #1e293b);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.milk-price-pill:focus-within {
+    border-color: var(--accent-primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.milk-price-pill .price-pill-label {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
+    white-space: nowrap;
+}
+
+.milk-price-pill .price-currency-symbol {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--accent-primary, #6366f1);
+}
+
+.monthly-price-input {
+    width: 60px;
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main, #1e293b);
+    font-family: inherit;
+    outline: none;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.dark-theme .monthly-price-input {
+    color: #f1f5f9;
 }
 
 .milk-month-label {
