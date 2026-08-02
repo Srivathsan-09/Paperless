@@ -3406,20 +3406,29 @@ async function exportToPDF(forceGlobal = false) {
                 doc.text(`Milk Expense Report - ${monthName} ${yearStr}`, 105, 30, { align: "center" });
 
                 // Calculate Stats
-                const totalAmount = monthlyData.reduce((sum, d) => sum + d.amount, 0);
-                const totalLitres = monthlyData.reduce((sum, d) => sum + (d.liters || 0), 0);
+                const getMilkQty = (d) => {
+                    if (d.quantity !== undefined && d.quantity !== null && !isNaN(d.quantity) && Number(d.quantity) > 0) {
+                        return Number(d.quantity);
+                    }
+                    const m = Number(d.morningLitres || 0);
+                    const n = Number(d.nightLitres || 0);
+                    return m + n;
+                };
+
+                const totalAmount = monthlyData.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+                const totalLitres = monthlyData.reduce((sum, d) => sum + getMilkQty(d), 0);
 
                 doc.setFontSize(12);
-                doc.text(`Total Cost: ₹${totalAmount.toLocaleString()}`, 14, 45);
-                doc.text(`Total Liters: ${totalLitres}`, 14, 52);
+                doc.text(`Total Cost: Rs. ${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 45);
+                doc.text(`Total Litres: ${totalLitres.toFixed(1)} L`, 14, 52);
 
                 // Table
                 const milkRows = monthlyData
                     .sort((a, b) => new Date(a.date) - new Date(b.date))
                     .map(d => [
                         formatISTDate(d.date),
-                        `${d.liters} L`, // Specific Milk Column
-                        `₹${d.amount.toLocaleString()}`
+                        `${getMilkQty(d).toFixed(1)} L`, // Specific Milk Column
+                        `Rs. ${Number(d.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                     ]);
 
                 doc.autoTable({
@@ -3431,6 +3440,7 @@ async function exportToPDF(forceGlobal = false) {
                 });
 
                 doc.save(`Paperless_Milk_${monthName}_${yearStr}.pdf`);
+                showToast(`Milk report for ${monthName} downloaded!`, "success");
                 return; // Stop here for Milk
             }
 
@@ -3455,9 +3465,9 @@ async function exportToPDF(forceGlobal = false) {
             doc.text(`Category Report: ${catName} - ${monthName} ${yearStr}`, 105, 30, { align: "center" });
 
             // Stats
-            const total = monthlyData.reduce((sum, d) => sum + d.amount, 0);
+            const total = monthlyData.reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
             doc.setFontSize(12);
-            doc.text(`Total Spent: ₹${total.toLocaleString()}`, 14, 45);
+            doc.text(`Total Spent: Rs. ${total.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, 45);
 
             // Table
             const historyRows = monthlyData
@@ -3465,7 +3475,7 @@ async function exportToPDF(forceGlobal = false) {
                 .map(h => [
                     formatISTDate(h.date),
                     h.itemName || h.notes || h.subCategory || 'Item',
-                    `₹${h.amount.toLocaleString()}`
+                    `Rs. ${Number(h.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                 ]);
 
             doc.autoTable({
