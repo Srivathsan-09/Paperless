@@ -999,52 +999,223 @@ function renderAbout() {
     });
 
     const main = document.getElementById('mainContent');
-    main.className = 'view-container about-view';
+    main.className = 'view-container about-view-wrapper';
     main.innerHTML = `
         <div class="about-container">
+            <!-- Header Section -->
             <div class="about-header">
-                <p>Digital Expense Tracking, Simplified.</p>
+                <h1 class="about-title">About Paperless</h1>
+                <p class="about-subtitle">An easier way to keep track of everyday expenses.</p>
             </div>
 
-            <div class="about-content">
-                <div class="about-card">
-                    <h3>What is Paperless?</h3>
-                    <p>Paperless is a simple, digital expense tracker designed to replace traditional paper/diary-based expense tracking. It offers a clean, distraction-free interface to manage your monthly expenses efficiently.</p>
-                </div>
+            <hr class="about-divider" />
 
-                <div class="about-card">
-                    <h3>Our Inspiration</h3>
-                    <p>Inspired by parents and families who meticulously maintain their monthly expenses in notebooks and diaries, Paperless aims to bring that discipline into the digital age—making the process organized, effortless, and insightful.</p>
-                </div>
+            <!-- What is Paperless? -->
+            <section class="about-section">
+                <h2 class="about-section-title">What is Paperless?</h2>
+                <p class="about-text">
+                    Paperless is a digital expense tracker built to make everyday expense recording simpler. Instead of maintaining expenses in notebooks or scattered notes, users can record, organize and review their expenses in one place.
+                </p>
+                <p class="about-text">
+                    The idea behind Paperless came from a simple observation: many people still keep track of their monthly spending manually. While that works, reviewing expenses later can become difficult. Paperless brings the same habit into a simple digital format.
+                </p>
+            </section>
 
-                <div class="about-card">
-                    <h3>Key Features</h3>
-                    <ul class="feature-list">
-                        <li>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                            Category-based expense tracking
-                        </li>
-                        <li>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                            Monthly summaries & history
-                        </li>
-                        <li>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
-                            Analytics & insights
-                        </li>
-                        <li>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
-                            Minimal, distraction-free UI
-                        </li>
-                    </ul>
-                </div>
+            <hr class="about-divider" />
 
-                <div class="about-card vision-card">
-                    <h3>Our Vision</h3>
-                    <p>To help users understand where their money goes and build better financial habits through simple, accessible technology.</p>
+            <!-- Why Paperless? -->
+            <section class="about-section">
+                <h2 class="about-section-title">Why Paperless?</h2>
+                <p class="about-text">
+                    Traditional expense tracking is often done using notebooks, diaries or phone notes. Although simple, it can make it difficult to understand spending patterns over time.
+                </p>
+                <p class="about-text">
+                    Paperless was created to keep the same simplicity while making expenses easier to organize, search, review and understand.
+                </p>
+
+                <div class="about-why-grid">
+                    <div class="about-why-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Record expenses quickly</span>
+                    </div>
+                    <div class="about-why-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Organize expenses by category</span>
+                    </div>
+                    <div class="about-why-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span>Review monthly spending and trends</span>
+                    </div>
                 </div>
+            </section>
+
+            <hr class="about-divider" />
+
+            <!-- What you can do -->
+            <section class="about-section">
+                <h2 class="about-section-title">What you can do</h2>
+                <div class="about-do-grid">
+                    <div class="about-do-card">
+                        <div class="about-do-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="16"></line>
+                                <line x1="8" y1="12" x2="16" y2="12"></line>
+                            </svg>
+                            <h3>Track Expenses</h3>
+                        </div>
+                        <p>Record daily expenses and keep them organized.</p>
+                    </div>
+
+                    <div class="about-do-card">
+                        <div class="about-do-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                            <h3>Manage Categories</h3>
+                        </div>
+                        <p>Group expenses based on how you spend your money.</p>
+                    </div>
+
+                    <div class="about-do-card">
+                        <div class="about-do-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            <h3>View Monthly Reports</h3>
+                        </div>
+                        <p>Review your expenses month by month and understand where your money went.</p>
+                    </div>
+
+                    <div class="about-do-card">
+                        <div class="about-do-header">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                                <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                            </svg>
+                            <h3>Analyze Spending</h3>
+                        </div>
+                        <p>Use visual insights to identify spending patterns.</p>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="about-divider" />
+
+            <!-- How it works -->
+            <section class="about-section">
+                <h2 class="about-section-title">How it works</h2>
+                <div class="about-steps-grid">
+                    <div class="about-step-card">
+                        <span class="about-step-num">01</span>
+                        <div class="about-step-info">
+                            <h3>Add an expense</h3>
+                            <p>Record the amount, category and relevant details.</p>
+                        </div>
+                    </div>
+                    <div class="about-step-card">
+                        <span class="about-step-num">02</span>
+                        <div class="about-step-info">
+                            <h3>Organize</h3>
+                            <p>Your expenses are grouped and stored for easy access.</p>
+                        </div>
+                    </div>
+                    <div class="about-step-card">
+                        <span class="about-step-num">03</span>
+                        <div class="about-step-info">
+                            <h3>Review</h3>
+                            <p>Check monthly totals, categories and spending patterns.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="about-divider" />
+
+            <!-- The idea behind Paperless -->
+            <section class="about-section">
+                <h2 class="about-section-title">The idea behind Paperless</h2>
+                <p class="about-text">
+                    Paperless was built around a simple idea — managing expenses should not require maintaining a notebook or remembering where every expense was written down.
+                </p>
+                <p class="about-text">
+                    The goal is not to make expense tracking complicated. It is to make a small everyday habit easier to maintain digitally.
+                </p>
+            </section>
+
+            <hr class="about-divider" />
+
+            <!-- Key Features -->
+            <section class="about-section">
+                <h2 class="about-section-title">Key Features</h2>
+                <div class="about-features-grid">
+                    <div class="about-feature-item">• Expense tracking</div>
+                    <div class="about-feature-item">• Category-based organization</div>
+                    <div class="about-feature-item">• Monthly reports</div>
+                    <div class="about-feature-item">• Spending analytics</div>
+                    <div class="about-feature-item">• User accounts</div>
+                    <div class="about-feature-item">• Responsive interface</div>
+                </div>
+            </section>
+
+            <hr class="about-divider" />
+
+            <!-- Built With -->
+            <section class="about-section">
+                <h2 class="about-section-title">Built With</h2>
+                <div class="about-tech-grid">
+                    <div class="about-tech-box">
+                        <span class="about-tech-label">Frontend</span>
+                        <span class="about-tech-val">HTML • CSS • JavaScript</span>
+                    </div>
+                    <div class="about-tech-box">
+                        <span class="about-tech-label">Backend</span>
+                        <span class="about-tech-val">Node.js • Express.js</span>
+                    </div>
+                    <div class="about-tech-box">
+                        <span class="about-tech-label">Database</span>
+                        <span class="about-tech-val">MongoDB</span>
+                    </div>
+                    <div class="about-tech-box">
+                        <span class="about-tech-label">Authentication</span>
+                        <span class="about-tech-val">JWT / Google Authentication</span>
+                    </div>
+                </div>
+            </section>
+
+            <hr class="about-divider" />
+
+            <!-- What Paperless aims to do -->
+            <section class="about-section">
+                <div class="about-aims-card">
+                    <h2 class="about-section-title" style="margin-bottom: 0.5rem;">What Paperless aims to do</h2>
+                    <p class="about-text" style="margin-bottom: 0.5rem;">
+                        Paperless aims to make personal expense tracking simple enough to become an everyday habit.
+                    </p>
+                    <p class="about-text" style="margin: 0;">
+                        No complicated financial terminology. No unnecessary features. Just a straightforward way to record and understand your spending.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Developer / Project Note -->
+            <div class="about-note">
+                <p><strong>A project built with a simple idea.</strong></p>
+                <p>Paperless is a practical software project focused on solving an everyday problem through a simple web application.</p>
             </div>
-            
+
             <div class="about-footer">
                 <p>&copy; ${new Date().getFullYear()} Paperless. All rights reserved.</p>
             </div>
