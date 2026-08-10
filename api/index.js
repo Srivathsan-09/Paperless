@@ -104,22 +104,8 @@ app.use('/api/entries', require('../server/routes/entries'));
 app.use('/api/admin', require('../server/routes/admin'));
 
 
-// User profile route
-const verifyToken = require('../server/middleware/verifyToken');
-app.get('/api/user/profile', verifyToken, (req, res) => {
-    res.json({
-        success: true,
-        user: {
-            id: req.user._id,
-            name: req.user.name,
-            email: req.user.email,
-            profilePic: req.user.profilePic,
-            isAdmin: req.user.isAdmin,
-            createdAt: req.user.createdAt,
-            lastLogin: req.user.lastLogin,
-        },
-    });
-});
+app.use('/api/user', require('../server/routes/user'));
+app.use('/api/profile', require('../server/routes/user'));
 
 /**
  * POST /api/setup/promote-admin

@@ -34,6 +34,11 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: '',
     },
+    phone: {
+        type: String,
+        default: '',
+        trim: true,
+    },
     isAdmin: {
         type: Boolean,
         default: false, // Set to true for admin users only

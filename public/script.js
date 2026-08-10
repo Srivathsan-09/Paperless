@@ -1052,6 +1052,354 @@ function renderAbout() {
     `;
 }
 
+// --- PROFILE PAGE ---
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function getUserInitials(name) {
+    if (!name || !name.trim()) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) {
+        return parts[0].substring(0, 2).toUpperCase();
+    }
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function formatMemberSince(dateStr) {
+    if (!dateStr) return 'N/A';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return 'N/A';
+        return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } catch (e) {
+        return 'N/A';
+    }
+}
+
+async function renderProfile() {
+    STATE.view = 'profile';
+    STATE.activeCategory = null;
+
+    HeaderManager.update({
+        showBack: true,
+        onBack: 'renderDashboard',
+        hideMonthSelector: true
+    });
+
+    const main = document.getElementById('mainContent');
+    main.className = 'view-container profile-view-wrapper';
+    main.innerHTML = `
+        <div class="profile-view">
+            <div class="profile-loading-state">
+                <div class="profile-spinner"></div>
+                <p style="color: var(--text-muted); font-weight: 500;">Loading profile information...</p>
+            </div>
+        </div>
+    `;
+
+    try {
+        const res = await fetchAPI('/api/user/profile');
+        if (!res || !res.success || !res.user) {
+            throw new Error(res?.message || 'Unable to load profile.');
+        }
+
+        const user = res.user;
+        STATE.currentUser = user; // Cache profile in STATE
+
+        const initials = getUserInitials(user.name);
+        const memberSinceFormatted = formatMemberSince(user.createdAt);
+        const loginMethod = user.authProvider || (user.googleId ? 'Google' : 'Email & Password');
+
+        const avatarHtml = user.profilePic
+            ? `<img src="${escapeHtml(user.profilePic)}" class="profile-avatar" alt="${escapeHtml(user.name)}" />`
+            : `<div class="profile-avatar-fallback">${escapeHtml(initials)}</div>`;
+
+        main.innerHTML = `
+            <div class="profile-view">
+                <!-- Profile Header -->
+                <div class="profile-header-card">
+                    <div class="profile-avatar-wrapper">
+                        ${avatarHtml}
+                    </div>
+                    <h2 class="profile-name">${escapeHtml(user.name)}</h2>
+                    <p class="profile-email">${escapeHtml(user.email)}</p>
+                    <button class="profile-edit-btn" onclick="openEditProfileModal()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Edit Profile
+                    </button>
+                </div>
+
+                <!-- Personal Information -->
+                <div class="profile-section-card">
+                    <h3 class="profile-section-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        Personal Information
+                    </h3>
+                    <div class="profile-field-grid">
+                        <div class="profile-field-row">
+                            <div class="profile-field-info">
+                                <span class="profile-field-label">Full Name</span>
+                                <span class="profile-field-value">${escapeHtml(user.name)}</span>
+                            </div>
+                            <button class="profile-field-edit-btn" onclick="openEditProfileModal()">Edit</button>
+                        </div>
+                        <div class="profile-field-row">
+                            <div class="profile-field-info">
+                                <span class="profile-field-label">Email Address</span>
+                                <span class="profile-field-value">${escapeHtml(user.email)}</span>
+                            </div>
+                        </div>
+                        <div class="profile-field-row">
+                            <div class="profile-field-info">
+                                <span class="profile-field-label">Phone Number</span>
+                                <span class="profile-field-value ${user.phone ? '' : 'empty'}">${user.phone ? escapeHtml(user.phone) : 'Not added'}</span>
+                            </div>
+                            <button class="profile-field-edit-btn" onclick="openEditProfileModal()">Edit</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Information -->
+                <div class="profile-section-card">
+                    <h3 class="profile-section-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        Account Information
+                    </h3>
+                    <div class="profile-field-grid">
+                        <div class="profile-field-row">
+                            <div class="profile-field-info">
+                                <span class="profile-field-label">Member Since</span>
+                                <span class="profile-field-value">${escapeHtml(memberSinceFormatted)}</span>
+                            </div>
+                        </div>
+                        <div class="profile-field-row">
+                            <div class="profile-field-info">
+                                <span class="profile-field-label">Login Method</span>
+                                <span class="profile-badge">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                    </svg>
+                                    ${escapeHtml(loginMethod)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (err) {
+        console.error('Error rendering profile:', err);
+        main.innerHTML = `
+            <div class="profile-view">
+                <div class="profile-error-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--error)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 0.75rem;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <h3 style="color: var(--text-main); margin-bottom: 0.5rem;">Failed to load profile</h3>
+                    <p style="color: var(--text-muted); margin-bottom: 1.25rem;">${escapeHtml(err.message || 'Error communicating with server.')}</p>
+                    <button class="profile-edit-btn" onclick="renderProfile()">Retry</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function openEditProfileModal() {
+    const user = STATE.currentUser || {};
+    STATE.tempProfilePic = user.profilePic || '';
+
+    const overlay = document.getElementById('moduleOverlay');
+    const panelContent = document.getElementById('panelContent');
+
+    if (!overlay || !panelContent) return;
+
+    const initials = getUserInitials(user.name);
+    const hasPic = !!STATE.tempProfilePic;
+
+    panelContent.innerHTML = `
+        <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem;">
+            <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-main); margin: 0;">Edit Profile</h2>
+            <button class="close-circle" onclick="closeModule()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer;">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <use href="#icon-x"></use>
+                </svg>
+            </button>
+        </div>
+
+        <form class="profile-edit-form" onsubmit="event.preventDefault(); saveProfileChanges();">
+            <!-- Avatar Upload Section -->
+            <div class="profile-upload-section">
+                <div id="profilePreviewContainer">
+                    ${hasPic
+                        ? `<img src="${escapeHtml(STATE.tempProfilePic)}" id="profilePicPreview" class="profile-preview-avatar" alt="Preview" />`
+                        : `<div id="profilePicPreviewFallback" class="profile-avatar-fallback" style="width:90px; height:90px; font-size:2rem;">${escapeHtml(initials)}</div>`
+                    }
+                </div>
+                <input type="file" id="profilePicInput" accept="image/png, image/jpeg, image/jpg, image/webp" style="display:none;" onchange="handleProfilePicChange(event)" />
+                <div class="profile-upload-controls">
+                    <button type="button" class="upload-btn" onclick="document.getElementById('profilePicInput').click()">Choose Photo</button>
+                    <button type="button" class="remove-btn" id="removePicBtn" onclick="handleRemoveProfilePic()" style="${hasPic ? '' : 'display:none;'}">Remove</button>
+                </div>
+            </div>
+
+            <!-- Inputs -->
+            <div class="profile-input-group">
+                <label for="editProfileName">Full Name</label>
+                <input type="text" id="editProfileName" class="profile-input" value="${escapeHtml(user.name || '')}" placeholder="Enter your full name" required maxlength="100" />
+            </div>
+
+            <div class="profile-input-group">
+                <label for="editProfileEmail">Email Address (Read-only)</label>
+                <input type="email" id="editProfileEmail" class="profile-input" value="${escapeHtml(user.email || '')}" readonly />
+            </div>
+
+            <div class="profile-input-group">
+                <label for="editProfilePhone">Phone Number (Optional)</label>
+                <input type="tel" id="editProfilePhone" class="profile-input" value="${escapeHtml(user.phone || '')}" placeholder="e.g. +91 98765 43210" maxlength="25" />
+            </div>
+
+            <!-- Actions -->
+            <div class="profile-modal-actions">
+                <button type="button" class="profile-modal-cancel" onclick="closeModule()">Cancel</button>
+                <button type="submit" class="profile-modal-save" id="saveProfileBtn">Save Changes</button>
+            </div>
+        </form>
+    `;
+
+    overlay.classList.add('active');
+}
+
+function handleProfilePicChange(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+        showToast('Invalid file format. Please upload PNG, JPG, or WEBP.', 'error');
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('Image size exceeds 5MB limit.', 'error');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const base64Data = e.target.result;
+        STATE.tempProfilePic = base64Data;
+
+        const container = document.getElementById('profilePreviewContainer');
+        if (container) {
+            container.innerHTML = `<img src="${escapeHtml(base64Data)}" id="profilePicPreview" class="profile-preview-avatar" alt="Preview" />`;
+        }
+
+        const removeBtn = document.getElementById('removePicBtn');
+        if (removeBtn) removeBtn.style.display = 'inline-block';
+    };
+    reader.onerror = function () {
+        showToast('Error reading image file.', 'error');
+    };
+    reader.readAsDataURL(file);
+}
+
+function handleRemoveProfilePic() {
+    STATE.tempProfilePic = '';
+
+    const user = STATE.currentUser || {};
+    const name = document.getElementById('editProfileName')?.value || user.name || '';
+    const initials = getUserInitials(name);
+
+    const container = document.getElementById('profilePreviewContainer');
+    if (container) {
+        container.innerHTML = `<div id="profilePicPreviewFallback" class="profile-avatar-fallback" style="width:90px; height:90px; font-size:2rem;">${escapeHtml(initials)}</div>`;
+    }
+
+    const removeBtn = document.getElementById('removePicBtn');
+    if (removeBtn) removeBtn.style.display = 'none';
+
+    // Clear input element value
+    const input = document.getElementById('profilePicInput');
+    if (input) input.value = '';
+}
+
+async function saveProfileChanges() {
+    const nameInput = document.getElementById('editProfileName');
+    const phoneInput = document.getElementById('editProfilePhone');
+    const saveBtn = document.getElementById('saveProfileBtn');
+
+    const name = nameInput ? nameInput.value.trim() : '';
+    const phone = phoneInput ? phoneInput.value.trim() : '';
+
+    if (!name) {
+        showToast('Full Name cannot be empty.', 'error');
+        if (nameInput) nameInput.focus();
+        return;
+    }
+
+    if (phone && !/^[+\d\s()-]{5,25}$/.test(phone)) {
+        showToast('Please enter a valid phone number.', 'error');
+        if (phoneInput) phoneInput.focus();
+        return;
+    }
+
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+    }
+
+    try {
+        const payload = {
+            name,
+            phone,
+            profilePic: STATE.tempProfilePic
+        };
+
+        const res = await fetchAPI('/api/user/profile', {
+            method: 'PUT',
+            body: JSON.stringify(payload)
+        });
+
+        if (!res || !res.success) {
+            throw new Error(res?.message || 'Failed to update profile');
+        }
+
+        showToast('Profile updated successfully!', 'success');
+        closeModule();
+
+        // Refresh profile page UI immediately
+        renderProfile();
+    } catch (err) {
+        console.error('Error saving profile:', err);
+        showToast(err.message || 'Error updating profile', 'error');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save Changes';
+        }
+    }
+}
+
 // --- ANALYTICS PAGE ---
 async function renderAnalytics() {
     STATE.view = 'analytics';
