@@ -4923,30 +4923,35 @@ function openAddFriendModal() {
     if (!overlay || !panelContent) return;
 
     panelContent.innerHTML = `
-        <div class="profile-modal-container">
-            <div class="profile-modal-header">
-                <h3>Add Friend</h3>
-                <p>Enter details of the person you pay for</p>
+        <div class="friend-modal-card">
+            <div class="friend-modal-header">
+                <div class="friend-modal-title-box">
+                    <h3>Add Friend</h3>
+                    <p>Enter details of the person you pay for</p>
+                </div>
+                <button type="button" class="close-circle" onclick="closeModule()" title="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
             <form onsubmit="saveNewFriend(event)">
-                <div class="profile-modal-body">
-                    <div class="profile-field-group">
+                <div class="friend-modal-body">
+                    <div class="friend-field-group">
                         <label for="friendNameInput">Full Name *</label>
-                        <input type="text" id="friendNameInput" class="profile-input" placeholder="e.g. Ravi Kumar" required maxlength="100" />
+                        <input type="text" id="friendNameInput" class="friend-modal-input" placeholder="e.g. Ravi Kumar" required maxlength="100" />
                     </div>
-                    <div class="profile-field-group">
+                    <div class="friend-field-group">
                         <label for="friendEmailInput">Email Address *</label>
-                        <input type="email" id="friendEmailInput" class="profile-input" placeholder="e.g. ravi@gmail.com" required />
-                        <span style="font-size: 0.78rem; color: var(--text-muted);">Notifications will be sent to this email address</span>
+                        <input type="email" id="friendEmailInput" class="friend-modal-input" placeholder="e.g. ravi@gmail.com" required />
+                        <span class="friend-input-hint">Notifications will be sent to this email address</span>
                     </div>
-                    <div class="profile-field-group">
+                    <div class="friend-field-group">
                         <label for="friendPhoneInput">Phone Number (Optional)</label>
-                        <input type="tel" id="friendPhoneInput" class="profile-input" placeholder="e.g. 9876543210" />
+                        <input type="tel" id="friendPhoneInput" class="friend-modal-input" placeholder="e.g. 9876543210" />
                     </div>
                 </div>
-                <div class="profile-modal-actions">
-                    <button type="button" class="profile-modal-cancel" onclick="closeModule()">Cancel</button>
-                    <button type="submit" class="profile-modal-save" id="btnSaveFriend">Add Friend</button>
+                <div class="friend-modal-actions">
+                    <button type="button" class="friend-modal-cancel" onclick="closeModule()">Cancel</button>
+                    <button type="submit" class="friend-modal-save" id="btnSaveFriend">Add Friend</button>
                 </div>
             </form>
         </div>
@@ -5006,35 +5011,41 @@ function openAddFriendPaymentModal(friendId) {
     const todayStr = new Date().toISOString().split('T')[0];
 
     panelContent.innerHTML = `
-        <div class="profile-modal-container">
-            <div class="profile-modal-header">
-                <h3>Add Payment for Friend</h3>
-                <p>Record money you paid on their behalf</p>
+        <div class="friend-modal-card">
+            <div class="friend-modal-header">
+                <div class="friend-modal-title-box">
+                    <h3>Add Payment for Friend</h3>
+                    <p>Record money you paid on their behalf</p>
+                </div>
+                <button type="button" class="close-circle" onclick="closeModule()" title="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
             <form onsubmit="saveFriendPayment(event, '${friendId}')">
-                <div class="profile-modal-body">
-                    <div class="profile-field-group">
+                <div class="friend-modal-body">
+                    <div class="friend-field-group">
                         <label for="paymentAmountInput">Amount (₹) *</label>
-                        <input type="number" step="0.01" min="0.01" id="paymentAmountInput" class="profile-input" placeholder="e.g. 500" required />
+                        <input type="number" step="0.01" min="0.01" id="paymentAmountInput" class="friend-modal-input" placeholder="e.g. 500" required />
                     </div>
-                    <div class="profile-field-group">
+                    <div class="friend-field-group">
                         <label for="paymentDescInput">Description *</label>
-                        <input type="text" id="paymentDescInput" class="profile-input" placeholder="e.g. Dinner, Movie, Cab" required />
+                        <input type="text" id="paymentDescInput" class="friend-modal-input" placeholder="e.g. Dinner, Movie, Cab" required />
                     </div>
-                    <div class="profile-field-group">
+                    <div class="friend-field-group">
                         <label for="paymentDateInput">Date</label>
-                        <input type="date" id="paymentDateInput" class="profile-input" value="${todayStr}" />
+                        <input type="date" id="paymentDateInput" class="friend-modal-input" value="${todayStr}" />
                     </div>
-                    <div class="profile-field-group" style="flex-direction: row; align-items: center; gap: 0.6rem;">
-                        <input type="checkbox" id="sendEmailCheckbox" checked style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;" />
-                        <label for="sendEmailCheckbox" style="margin: 0; font-weight: 500; font-size: 0.9rem; cursor: pointer;">
-                            Send email notification to friend
+                    <div class="friend-checkbox-card">
+                        <input type="checkbox" id="sendEmailCheckbox" checked />
+                        <label for="sendEmailCheckbox">
+                            <span class="checkbox-title">Send email notification to friend</span>
+                            <span class="checkbox-sub">An email summary will be delivered to their inbox</span>
                         </label>
                     </div>
                 </div>
-                <div class="profile-modal-actions">
-                    <button type="button" class="profile-modal-cancel" onclick="closeModule()">Cancel</button>
-                    <button type="submit" class="profile-modal-save" id="btnSavePayment">Add Payment</button>
+                <div class="friend-modal-actions">
+                    <button type="button" class="friend-modal-cancel" onclick="closeModule()">Cancel</button>
+                    <button type="submit" class="friend-modal-save" id="btnSavePayment">Add Payment</button>
                 </div>
             </form>
         </div>
@@ -5097,25 +5108,30 @@ function openSettleUpModal(friendId, currentOutstanding) {
     const defaultAmount = currentOutstanding || 0;
 
     panelContent.innerHTML = `
-        <div class="profile-modal-container">
-            <div class="profile-modal-header">
-                <h3>Settle Payment</h3>
-                <p>Current outstanding: ₹${defaultAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+        <div class="friend-modal-card">
+            <div class="friend-modal-header">
+                <div class="friend-modal-title-box">
+                    <h3>Settle Payment</h3>
+                    <p>Current outstanding: ₹${defaultAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+                </div>
+                <button type="button" class="close-circle" onclick="closeModule()" title="Close">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
             <form onsubmit="saveFriendSettlement(event, '${friendId}')">
-                <div class="profile-modal-body">
-                    <div class="profile-field-group">
+                <div class="friend-modal-body">
+                    <div class="friend-field-group">
                         <label for="settleAmountInput">Settlement Amount (₹) *</label>
-                        <input type="number" step="0.01" min="0.01" max="${defaultAmount}" id="settleAmountInput" class="profile-input" value="${defaultAmount}" required />
+                        <input type="number" step="0.01" min="0.01" max="${defaultAmount}" id="settleAmountInput" class="friend-modal-input" value="${defaultAmount}" required />
                     </div>
-                    <div class="profile-field-group">
+                    <div class="friend-field-group">
                         <label for="settleDateInput">Date</label>
-                        <input type="date" id="settleDateInput" class="profile-input" value="${todayStr}" />
+                        <input type="date" id="settleDateInput" class="friend-modal-input" value="${todayStr}" />
                     </div>
                 </div>
-                <div class="profile-modal-actions">
-                    <button type="button" class="profile-modal-cancel" onclick="closeModule()">Cancel</button>
-                    <button type="submit" class="profile-modal-save" style="background: var(--success);" id="btnSaveSettle">Mark as Settled</button>
+                <div class="friend-modal-actions">
+                    <button type="button" class="friend-modal-cancel" onclick="closeModule()">Cancel</button>
+                    <button type="submit" class="friend-modal-save" style="background: var(--success);" id="btnSaveSettle">Mark as Settled</button>
                 </div>
             </form>
         </div>
