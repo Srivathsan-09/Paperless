@@ -7590,14 +7590,18 @@ body:has(.login-view) {
     background: var(--primary);
     color: #ffffff;
     border: none;
-    padding: 0.55rem 1.25rem;
+    padding: 0 1.15rem;
+    height: 38px;
     border-radius: 10px;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 0.4rem;
+    white-space: nowrap;
+    flex-shrink: 0;
     transition: var(--transition);
     box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
 }
@@ -7931,6 +7935,28 @@ body:has(.login-view) {
 }
 
 @media (max-width: 650px) {
+    .friends-header-bar {
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .friends-title-group h1 {
+        font-size: 1.4rem;
+    }
+
+    .friends-title-group p {
+        font-size: 0.82rem;
+    }
+
+    .btn-add-friend {
+        height: 34px;
+        padding: 0 0.85rem;
+        font-size: 0.82rem;
+        border-radius: 8px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
     .friend-card {
         flex-direction: column;
         align-items: flex-start;
