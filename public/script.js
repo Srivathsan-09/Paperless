@@ -2245,8 +2245,8 @@ function closeModule(fallbackId) {
         return;
     }
 
-    // Do not navigate to Dashboard if closing modal from Profile, About, or custom views
-    if (STATE.view === 'profile' || STATE.view === 'about') {
+    // Do not navigate to Dashboard if closing modal from Profile, About, Friends, or custom views
+    if (STATE.view === 'profile' || STATE.view === 'about' || STATE.view === 'friends' || STATE.view === 'friend-details') {
         return;
     }
 
@@ -4646,3 +4646,539 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.key === 'Escape') closeDrawer();
     });
 });
+
+// ==========================================================================
+// FRIENDS FEATURE SYSTEM
+// ==========================================================================
+
+async function renderFriends() {
+    STATE.view = 'friends';
+    STATE.activeCategory = null;
+
+    HeaderManager.update({
+        showBack: true,
+        onBack: 'renderDashboard',
+        hideMonthSelector: true
+    });
+
+    const main = document.getElementById('mainContent');
+    main.className = 'view-container friends-view-wrapper';
+    main.innerHTML = `
+        <div class="friends-container">
+            <div class="friends-header-bar">
+                <div class="friends-title-group">
+                    <h1>Friends</h1>
+                    <p>Track payments made on behalf of others</p>
+                </div>
+                <button class="btn-add-friend" onclick="openAddFriendModal()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Add Friend
+                </button>
+            </div>
+
+            <div id="friendsListContent">
+                <div class="profile-loading-state">
+                    <div class="profile-spinner"></div>
+                    <p style="color: var(--text-muted); font-weight: 500;">Loading friends...</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    try {
+        const res = await fetchAPI('/api/friends');
+        if (!res || !res.success) {
+            throw new Error(res?.message || 'Unable to fetch friends');
+        }
+
+        const container = document.getElementById('friendsListContent');
+        if (!container) return;
+
+        const friends = res.friends || [];
+        const totalOutstanding = res.totalOutstanding || 0;
+
+        if (friends.length === 0) {
+            container.innerHTML = `
+                <div class="friends-empty-state">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <p>No friends added yet. Add people you commonly pay for and keep track of payments made on their behalf.</p>
+                    <button class="btn-add-friend" style="margin-top: 0.5rem;" onclick="openAddFriendModal()">
+                        + Add Friend
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        const formattedTotal = totalOutstanding.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+
+        let html = `
+            <div class="friends-outstanding-banner">
+                <div class="friends-outstanding-info">
+                    <span class="friends-outstanding-label">Total Outstanding</span>
+                    <span class="friends-outstanding-amount">₹${formattedTotal}</span>
+                </div>
+                <div style="font-size: 0.88rem; color: var(--text-muted); font-weight: 500;">
+                    ${friends.filter(f => f.outstandingBalance > 0).length} friend(s) with pending balance
+                </div>
+            </div>
+
+            <div class="friends-list-grid">
+        `;
+
+        friends.forEach(friend => {
+            const initial = friend.name ? friend.name.charAt(0).toUpperCase() : '?';
+            const owes = friend.outstandingBalance > 0;
+            const balanceText = owes
+                ? `₹${friend.outstandingBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 })}`
+                : 'Settled';
+            const statusLabel = owes ? 'You paid for ' + escapeHtml(friend.name.split(' ')[0]) : 'Status';
+            const balanceClass = owes ? 'owes' : 'settled';
+
+            html += `
+                <div class="friend-card">
+                    <div class="friend-info">
+                        <div class="friend-avatar">${escapeHtml(initial)}</div>
+                        <div class="friend-details-text">
+                            <h3>${escapeHtml(friend.name)}</h3>
+                            <p>
+                                <span>${escapeHtml(friend.email)}</span>
+                                ${friend.phone ? `<span>• ${escapeHtml(friend.phone)}</span>` : ''}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="friend-balance-group">
+                        <div class="friend-balance-box">
+                            <span class="friend-balance-status">${statusLabel}</span>
+                            <span class="friend-balance-value ${balanceClass}">${balanceText}</span>
+                        </div>
+                        <button class="btn-view-friend" onclick="renderFriendDetails('${friend._id}')">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        container.innerHTML = html;
+
+    } catch (err) {
+        console.error('renderFriends error:', err);
+        const container = document.getElementById('friendsListContent');
+        if (container) {
+            container.innerHTML = `
+                <div class="profile-error-state">
+                    <p style="color: var(--error); font-weight: 600;">Error: ${escapeHtml(err.message)}</p>
+                    <button class="btn-add-friend" style="margin-top: 1rem;" onclick="renderFriends()">Retry</button>
+                </div>
+            `;
+        }
+    }
+}
+
+async function renderFriendDetails(friendId) {
+    STATE.view = 'friend-details';
+    STATE.activeCategory = null;
+
+    HeaderManager.update({
+        showBack: true,
+        onBack: 'renderFriends',
+        hideMonthSelector: true
+    });
+
+    const main = document.getElementById('mainContent');
+    main.className = 'view-container friends-view-wrapper';
+    main.innerHTML = `
+        <div class="friends-container">
+            <div class="profile-loading-state">
+                <div class="profile-spinner"></div>
+                <p style="color: var(--text-muted); font-weight: 500;">Loading friend details...</p>
+            </div>
+        </div>
+    `;
+
+    try {
+        const res = await fetchAPI(`/api/friends/${friendId}/transactions`);
+        if (!res || !res.success || !res.friend) {
+            throw new Error(res?.message || 'Unable to fetch friend details');
+        }
+
+        const friend = res.friend;
+        const transactions = res.transactions || [];
+        const owes = friend.outstandingBalance > 0;
+        const initial = friend.name ? friend.name.charAt(0).toUpperCase() : '?';
+        const formattedOutstanding = friend.outstandingBalance.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+
+        let txHtml = '';
+        if (transactions.length === 0) {
+            txHtml = `
+                <div class="friends-empty-state" style="padding: 2rem 1rem;">
+                    <p>You haven't recorded any payments for this friend yet.</p>
+                    <button class="btn-add-amount" style="margin-top: 0.5rem;" onclick="openAddFriendPaymentModal('${friend._id}')">
+                        + Add Amount
+                    </button>
+                </div>
+            `;
+        } else {
+            txHtml = transactions.map(t => {
+                const isPayment = t.type === 'payment';
+                const formattedDate = new Date(t.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+                const formattedAmt = t.amount.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+                const typeLabel = isPayment ? 'Payment' : 'Settlement';
+                const badgeClass = isPayment ? 'payment' : 'settlement';
+                const amtClass = isPayment ? 'payment' : 'settlement';
+                const amtPrefix = isPayment ? '+' : '-';
+
+                return `
+                    <div class="transaction-item-card">
+                        <div class="transaction-item-left">
+                            <div class="transaction-badge ${badgeClass}">${typeLabel.charAt(0)}</div>
+                            <div class="transaction-item-meta">
+                                <h4>${escapeHtml(t.description || (isPayment ? 'Payment made for friend' : 'Settlement'))}</h4>
+                                <p>
+                                    <span>${formattedDate}</span>
+                                    ${isPayment && t.emailSent ? `<span class="email-tag">Email Sent</span>` : ''}
+                                </p>
+                            </div>
+                        </div>
+                        <div class="transaction-item-amount ${amtClass}">
+                            ${amtPrefix}₹${formattedAmt}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        main.innerHTML = `
+            <div class="friends-container">
+                <div class="friend-detail-card">
+                    <div class="friend-info">
+                        <div class="friend-avatar" style="width: 56px; height: 56px; font-size: 1.4rem;">${escapeHtml(initial)}</div>
+                        <div class="friend-details-text">
+                            <h2 style="font-size: 1.35rem; font-weight: 700; margin: 0 0 0.2rem 0; color: var(--text-main);">${escapeHtml(friend.name)}</h2>
+                            <p>
+                                <span>${escapeHtml(friend.email)}</span>
+                                ${friend.phone ? `<span>• ${escapeHtml(friend.phone)}</span>` : ''}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="friend-detail-actions">
+                        <button class="btn-add-amount" onclick="openAddFriendPaymentModal('${friend._id}')">
+                            + Add Amount
+                        </button>
+                        ${owes ? `<button class="btn-settle-up" onclick="openSettleUpModal('${friend._id}', ${friend.outstandingBalance})">Settle Up</button>` : ''}
+                        <button class="btn-friend-danger" title="Delete Friend" onclick="confirmDeleteFriend('${friend._id}', '${escapeHtml(friend.name)}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="friends-outstanding-banner">
+                    <div class="friends-outstanding-info">
+                        <span class="friends-outstanding-label">Current Outstanding</span>
+                        <span class="friends-outstanding-amount">₹${formattedOutstanding}</span>
+                    </div>
+                    <div style="font-size: 0.88rem; color: var(--text-muted); font-weight: 500;">
+                        ${owes ? 'Friend owes you this balance' : 'All payments settled!'}
+                    </div>
+                </div>
+
+                <div class="transaction-history-section">
+                    <h3 class="transaction-history-title">Transaction History</h3>
+                    <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+                        ${txHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+
+    } catch (err) {
+        console.error('renderFriendDetails error:', err);
+        main.innerHTML = `
+            <div class="friends-container">
+                <div class="profile-error-state">
+                    <p style="color: var(--error); font-weight: 600;">Error: ${escapeHtml(err.message)}</p>
+                    <button class="btn-add-friend" style="margin-top: 1rem;" onclick="renderFriends()">Back to Friends</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function openAddFriendModal() {
+    const overlay = document.getElementById('moduleOverlay');
+    const panelContent = document.getElementById('panelContent');
+    if (!overlay || !panelContent) return;
+
+    panelContent.innerHTML = `
+        <div class="profile-modal-container">
+            <div class="profile-modal-header">
+                <h3>Add Friend</h3>
+                <p>Enter details of the person you pay for</p>
+            </div>
+            <form onsubmit="saveNewFriend(event)">
+                <div class="profile-modal-body">
+                    <div class="profile-field-group">
+                        <label for="friendNameInput">Full Name *</label>
+                        <input type="text" id="friendNameInput" class="profile-input" placeholder="e.g. Ravi Kumar" required maxlength="100" />
+                    </div>
+                    <div class="profile-field-group">
+                        <label for="friendEmailInput">Email Address *</label>
+                        <input type="email" id="friendEmailInput" class="profile-input" placeholder="e.g. ravi@gmail.com" required />
+                        <span style="font-size: 0.78rem; color: var(--text-muted);">Notifications will be sent to this email address</span>
+                    </div>
+                    <div class="profile-field-group">
+                        <label for="friendPhoneInput">Phone Number (Optional)</label>
+                        <input type="tel" id="friendPhoneInput" class="profile-input" placeholder="e.g. 9876543210" />
+                    </div>
+                </div>
+                <div class="profile-modal-actions">
+                    <button type="button" class="profile-modal-cancel" onclick="closeModule()">Cancel</button>
+                    <button type="submit" class="profile-modal-save" id="btnSaveFriend">Add Friend</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    overlay.classList.add('active');
+}
+
+async function saveNewFriend(event) {
+    event.preventDefault();
+    const btn = document.getElementById('btnSaveFriend');
+    const name = document.getElementById('friendNameInput')?.value.trim();
+    const email = document.getElementById('friendEmailInput')?.value.trim();
+    const phone = document.getElementById('friendPhoneInput')?.value.trim();
+
+    if (!name) {
+        showToast('Friend name is required.', 'error');
+        return;
+    }
+    if (!email) {
+        showToast('Email address is required.', 'error');
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Adding...';
+    }
+
+    try {
+        const res = await fetchAPI('/api/friends', {
+            method: 'POST',
+            body: JSON.stringify({ name, email, phone })
+        });
+
+        if (!res || !res.success) {
+            throw new Error(res?.message || 'Failed to add friend.');
+        }
+
+        showToast('Friend added successfully!', 'success');
+        closeModule();
+        renderFriends();
+    } catch (err) {
+        showToast(err.message || 'Error adding friend', 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = 'Add Friend';
+        }
+    }
+}
+
+function openAddFriendPaymentModal(friendId) {
+    const overlay = document.getElementById('moduleOverlay');
+    const panelContent = document.getElementById('panelContent');
+    if (!overlay || !panelContent) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    panelContent.innerHTML = `
+        <div class="profile-modal-container">
+            <div class="profile-modal-header">
+                <h3>Add Payment for Friend</h3>
+                <p>Record money you paid on their behalf</p>
+            </div>
+            <form onsubmit="saveFriendPayment(event, '${friendId}')">
+                <div class="profile-modal-body">
+                    <div class="profile-field-group">
+                        <label for="paymentAmountInput">Amount (₹) *</label>
+                        <input type="number" step="0.01" min="0.01" id="paymentAmountInput" class="profile-input" placeholder="e.g. 500" required />
+                    </div>
+                    <div class="profile-field-group">
+                        <label for="paymentDescInput">Description *</label>
+                        <input type="text" id="paymentDescInput" class="profile-input" placeholder="e.g. Dinner, Movie, Cab" required />
+                    </div>
+                    <div class="profile-field-group">
+                        <label for="paymentDateInput">Date</label>
+                        <input type="date" id="paymentDateInput" class="profile-input" value="${todayStr}" />
+                    </div>
+                    <div class="profile-field-group" style="flex-direction: row; align-items: center; gap: 0.6rem;">
+                        <input type="checkbox" id="sendEmailCheckbox" checked style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;" />
+                        <label for="sendEmailCheckbox" style="margin: 0; font-weight: 500; font-size: 0.9rem; cursor: pointer;">
+                            Send email notification to friend
+                        </label>
+                    </div>
+                </div>
+                <div class="profile-modal-actions">
+                    <button type="button" class="profile-modal-cancel" onclick="closeModule()">Cancel</button>
+                    <button type="submit" class="profile-modal-save" id="btnSavePayment">Add Payment</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    overlay.classList.add('active');
+}
+
+async function saveFriendPayment(event, friendId) {
+    event.preventDefault();
+    const btn = document.getElementById('btnSavePayment');
+    const amount = document.getElementById('paymentAmountInput')?.value;
+    const description = document.getElementById('paymentDescInput')?.value.trim();
+    const date = document.getElementById('paymentDateInput')?.value;
+    const sendEmail = document.getElementById('sendEmailCheckbox')?.checked;
+
+    if (!amount || parseFloat(amount) <= 0) {
+        showToast('Please enter a valid amount.', 'error');
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Saving...';
+    }
+
+    try {
+        const res = await fetchAPI(`/api/friends/${friendId}/payment`, {
+            method: 'POST',
+            body: JSON.stringify({ amount, description, date, sendEmail })
+        });
+
+        if (!res || !res.success) {
+            throw new Error(res?.message || 'Failed to record payment.');
+        }
+
+        if (res.emailSent === false && sendEmail) {
+            showToast('Payment recorded, but the email notification could not be sent.', 'warning');
+        } else {
+            showToast('Payment recorded successfully!', 'success');
+        }
+
+        closeModule();
+        renderFriendDetails(friendId);
+    } catch (err) {
+        showToast(err.message || 'Error recording payment', 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = 'Add Payment';
+        }
+    }
+}
+
+function openSettleUpModal(friendId, currentOutstanding) {
+    const overlay = document.getElementById('moduleOverlay');
+    const panelContent = document.getElementById('panelContent');
+    if (!overlay || !panelContent) return;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    const defaultAmount = currentOutstanding || 0;
+
+    panelContent.innerHTML = `
+        <div class="profile-modal-container">
+            <div class="profile-modal-header">
+                <h3>Settle Payment</h3>
+                <p>Current outstanding: ₹${defaultAmount.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</p>
+            </div>
+            <form onsubmit="saveFriendSettlement(event, '${friendId}')">
+                <div class="profile-modal-body">
+                    <div class="profile-field-group">
+                        <label for="settleAmountInput">Settlement Amount (₹) *</label>
+                        <input type="number" step="0.01" min="0.01" max="${defaultAmount}" id="settleAmountInput" class="profile-input" value="${defaultAmount}" required />
+                    </div>
+                    <div class="profile-field-group">
+                        <label for="settleDateInput">Date</label>
+                        <input type="date" id="settleDateInput" class="profile-input" value="${todayStr}" />
+                    </div>
+                </div>
+                <div class="profile-modal-actions">
+                    <button type="button" class="profile-modal-cancel" onclick="closeModule()">Cancel</button>
+                    <button type="submit" class="profile-modal-save" style="background: var(--success);" id="btnSaveSettle">Mark as Settled</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    overlay.classList.add('active');
+}
+
+async function saveFriendSettlement(event, friendId) {
+    event.preventDefault();
+    const btn = document.getElementById('btnSaveSettle');
+    const amount = document.getElementById('settleAmountInput')?.value;
+    const date = document.getElementById('settleDateInput')?.value;
+
+    if (!amount || parseFloat(amount) <= 0) {
+        showToast('Please enter a valid settlement amount.', 'error');
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Settling...';
+    }
+
+    try {
+        const res = await fetchAPI(`/api/friends/${friendId}/settle`, {
+            method: 'POST',
+            body: JSON.stringify({ amount, date })
+        });
+
+        if (!res || !res.success) {
+            throw new Error(res?.message || 'Failed to record settlement.');
+        }
+
+        showToast('Settlement recorded successfully!', 'success');
+        closeModule();
+        renderFriendDetails(friendId);
+    } catch (err) {
+        showToast(err.message || 'Error recording settlement', 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = 'Mark as Settled';
+        }
+    }
+}
+
+async function confirmDeleteFriend(friendId, friendName) {
+    if (!confirm(`Are you sure you want to delete ${friendName}? All transaction history for this friend will be deleted.`)) {
+        return;
+    }
+
+    try {
+        const res = await fetchAPI(`/api/friends/${friendId}`, {
+            method: 'DELETE'
+        });
+
+        if (!res || !res.success) {
+            throw new Error(res?.message || 'Failed to delete friend.');
+        }
+
+        showToast('Friend removed.', 'success');
+        renderFriends();
+    } catch (err) {
+        showToast(err.message || 'Error deleting friend', 'error');
+    }
+}

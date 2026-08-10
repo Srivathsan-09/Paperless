@@ -7545,4 +7545,412 @@ body:has(.login-view) {
         width: 100%;
         text-align: center;
     }
+}
+
+/* ==========================================================================
+   FRIENDS FEATURE STYLES
+   ========================================================================== */
+
+.view-container.friends-view-wrapper {
+    padding-top: 0.25rem !important;
+    padding-bottom: 2rem !important;
+}
+
+.friends-container {
+    max-width: 760px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.friends-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.friends-title-group h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0 0 0.2rem 0;
+    letter-spacing: -0.02em;
+}
+
+.friends-title-group p {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.btn-add-friend {
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    padding: 0.55rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: var(--transition);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}
+
+.btn-add-friend:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+/* Total Outstanding Banner */
+.friends-outstanding-banner {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-soft);
+}
+
+.friends-outstanding-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.friends-outstanding-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.friends-outstanding-amount {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--primary);
+    letter-spacing: -0.02em;
+}
+
+.friends-list-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.friend-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.15rem 1.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: var(--shadow-soft);
+    transition: var(--transition);
+}
+
+.friend-card:hover {
+    border-color: var(--primary);
+}
+
+.friend-info {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.friend-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    color: #ffffff;
+    font-size: 1.25rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.friend-details-text h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 0.2rem 0;
+}
+
+.friend-details-text p {
+    font-size: 0.84rem;
+    color: var(--text-muted);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.friend-balance-group {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    text-align: right;
+}
+
+.friend-balance-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.friend-balance-status {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.friend-balance-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.friend-balance-value.owes {
+    color: var(--error);
+}
+
+.friend-balance-value.settled {
+    color: var(--success);
+}
+
+.btn-view-friend {
+    background: var(--bg-color);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-view-friend:hover {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+}
+
+/* Friend Detail Page */
+.friend-detail-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.35rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-soft);
+    gap: 1rem;
+}
+
+.friend-detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.btn-add-amount {
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    padding: 0.55rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-add-amount:hover {
+    background: var(--primary-hover);
+}
+
+.btn-settle-up {
+    background: var(--success);
+    color: #ffffff;
+    border: none;
+    padding: 0.55rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-settle-up:hover {
+    filter: brightness(0.95);
+}
+
+.btn-friend-danger {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 0.55rem 0.75rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-friend-danger:hover {
+    color: var(--error);
+    border-color: var(--error);
+}
+
+/* Transaction History List */
+.transaction-history-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.transaction-history-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.transaction-item-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.95rem 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: var(--shadow-soft);
+}
+
+.transaction-item-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.transaction-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.transaction-badge.payment {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+
+.transaction-badge.settlement {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--success);
+}
+
+.transaction-item-meta h4 {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-main);
+    margin: 0 0 0.15rem 0;
+}
+
+.transaction-item-meta p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.email-tag {
+    font-size: 0.72rem;
+    background: var(--primary-light);
+    color: var(--primary);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.transaction-item-amount {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.transaction-item-amount.payment {
+    color: var(--text-main);
+}
+
+.transaction-item-amount.settlement {
+    color: var(--success);
+}
+
+.friends-empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.friends-empty-state p {
+    margin: 0;
+    font-size: 0.92rem;
+    max-width: 420px;
+    line-height: 1.5;
+}
+
+@media (max-width: 650px) {
+    .friend-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.85rem;
+    }
+
+    .friend-balance-group {
+        width: 100%;
+        justify-content: space-between;
+        text-align: left;
+    }
+
+    .friend-detail-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .friend-detail-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
 }
