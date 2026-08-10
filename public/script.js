@@ -1241,7 +1241,7 @@ async function renderProfile() {
     });
 
     const main = document.getElementById('mainContent');
-    main.className = 'view-container profile-view-wrapper';
+    main.className = 'view-container profile-view-wrapper profile-view';
     main.innerHTML = `
         <div class="profile-view">
             <div class="profile-loading-state">
