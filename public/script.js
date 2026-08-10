@@ -4680,7 +4680,7 @@ async function renderFriends() {
         <div class="friends-container">
             <div class="friends-header-bar">
                 <div class="friends-title-group">
-                    <h1>Friends</h1>
+                    <h1>Settlements</h1>
                     <p>Track payments made on behalf of others</p>
                 </div>
                 <button class="btn-add-friend" onclick="openAddFriendModal()">
@@ -4688,14 +4688,14 @@ async function renderFriends() {
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
-                    Add Friend
+                    Add Contact
                 </button>
             </div>
 
             <div id="friendsListContent">
                 <div class="profile-loading-state">
                     <div class="profile-spinner"></div>
-                    <p style="color: var(--text-muted); font-weight: 500;">Loading friends...</p>
+                    <p style="color: var(--text-muted); font-weight: 500;">Loading contacts...</p>
                 </div>
             </div>
         </div>
@@ -4704,7 +4704,7 @@ async function renderFriends() {
     try {
         const res = await fetchAPI('/api/friends');
         if (!res || !res.success) {
-            throw new Error(res?.message || 'Unable to fetch friends');
+            throw new Error(res?.message || 'Unable to fetch contacts');
         }
 
         const container = document.getElementById('friendsListContent');
@@ -4722,9 +4722,9 @@ async function renderFriends() {
                         <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
                         <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                     </svg>
-                    <p>No friends added yet. Add people you commonly pay for and keep track of payments made on their behalf.</p>
+                    <p>No contacts added yet. Add people you commonly pay for and keep track of payments made on their behalf.</p>
                     <button class="btn-add-friend" style="margin-top: 0.5rem;" onclick="openAddFriendModal()">
-                        + Add Friend
+                        + Add Contact
                     </button>
                 </div>
             `;
@@ -4740,7 +4740,7 @@ async function renderFriends() {
                     <span class="friends-outstanding-amount">₹${formattedTotal}</span>
                 </div>
                 <div style="font-size: 0.88rem; color: var(--text-muted); font-weight: 500;">
-                    ${friends.filter(f => f.outstandingBalance > 0).length} friend(s) with pending balance
+                    ${friends.filter(f => f.outstandingBalance > 0).length} contact(s) with pending balance
                 </div>
             </div>
 
@@ -4814,7 +4814,7 @@ async function renderFriendDetails(friendId) {
         <div class="friends-container">
             <div class="profile-loading-state">
                 <div class="profile-spinner"></div>
-                <p style="color: var(--text-muted); font-weight: 500;">Loading friend details...</p>
+                <p style="color: var(--text-muted); font-weight: 500;">Loading settlement details...</p>
             </div>
         </div>
     `;
@@ -4822,7 +4822,7 @@ async function renderFriendDetails(friendId) {
     try {
         const res = await fetchAPI(`/api/friends/${friendId}/transactions`);
         if (!res || !res.success || !res.friend) {
-            throw new Error(res?.message || 'Unable to fetch friend details');
+            throw new Error(res?.message || 'Unable to fetch settlement details');
         }
 
         const friend = res.friend;
@@ -4835,7 +4835,7 @@ async function renderFriendDetails(friendId) {
         if (transactions.length === 0) {
             txHtml = `
                 <div class="friends-empty-state" style="padding: 2rem 1rem;">
-                    <p>You haven't recorded any payments for this friend yet.</p>
+                    <p>You haven't recorded any payments for this contact yet.</p>
                     <button class="btn-add-amount" style="margin-top: 0.5rem;" onclick="openAddFriendPaymentModal('${friend._id}')">
                         + Add Amount
                     </button>
@@ -4856,7 +4856,7 @@ async function renderFriendDetails(friendId) {
                         <div class="transaction-item-left">
                             <div class="transaction-badge ${badgeClass}">${typeLabel.charAt(0)}</div>
                             <div class="transaction-item-meta">
-                                <h4>${escapeHtml(t.description || (isPayment ? 'Payment made for friend' : 'Settlement'))}</h4>
+                                <h4>${escapeHtml(t.description || (isPayment ? 'Payment made for contact' : 'Settlement'))}</h4>
                                 <p>
                                     <span>${formattedDate}</span>
                                     ${isPayment && t.emailSent ? `<span class="email-tag">Email Sent</span>` : ''}
@@ -4889,7 +4889,7 @@ async function renderFriendDetails(friendId) {
                             + Add Amount
                         </button>
                         ${owes ? `<button class="btn-settle-up" onclick="openSettleUpModal('${friend._id}', ${friend.outstandingBalance})">Settle Up</button>` : ''}
-                        <button class="btn-friend-danger" title="Delete Friend" onclick="confirmDeleteFriend('${friend._id}', '${escapeHtml(friend.name)}')">
+                        <button class="btn-friend-danger" title="Delete Contact" onclick="confirmDeleteFriend('${friend._id}', '${escapeHtml(friend.name)}')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="3 6 5 6 21 6"></polyline>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -4904,7 +4904,7 @@ async function renderFriendDetails(friendId) {
                         <span class="friends-outstanding-amount">₹${formattedOutstanding}</span>
                     </div>
                     <div style="font-size: 0.88rem; color: var(--text-muted); font-weight: 500;">
-                        ${owes ? 'Friend owes you this balance' : 'All payments settled!'}
+                        ${owes ? 'Contact owes you this balance' : 'All payments settled!'}
                     </div>
                 </div>
 
@@ -4923,7 +4923,7 @@ async function renderFriendDetails(friendId) {
             <div class="friends-container">
                 <div class="profile-error-state">
                     <p style="color: var(--error); font-weight: 600;">Error: ${escapeHtml(err.message)}</p>
-                    <button class="btn-add-friend" style="margin-top: 1rem;" onclick="renderFriends()">Back to Friends</button>
+                    <button class="btn-add-friend" style="margin-top: 1rem;" onclick="renderFriends()">Back to Settlements</button>
                 </div>
             </div>
         `;
@@ -4939,7 +4939,7 @@ function openAddFriendModal() {
         <div class="friend-modal-card">
             <div class="friend-modal-header">
                 <div class="friend-modal-title-box">
-                    <h3>Add Friend</h3>
+                    <h3>Add Contact</h3>
                     <p>Enter details of the person you pay for</p>
                 </div>
                 <button type="button" class="close-circle" onclick="closeModule()" title="Close">
@@ -4964,7 +4964,7 @@ function openAddFriendModal() {
                 </div>
                 <div class="friend-modal-actions">
                     <button type="button" class="friend-modal-cancel" onclick="closeModule()">Cancel</button>
-                    <button type="submit" class="friend-modal-save" id="btnSaveFriend">Add Friend</button>
+                    <button type="submit" class="friend-modal-save" id="btnSaveFriend">Add Contact</button>
                 </div>
             </form>
         </div>
@@ -4981,7 +4981,7 @@ async function saveNewFriend(event) {
     const phone = document.getElementById('friendPhoneInput')?.value.trim();
 
     if (!name) {
-        showToast('Friend name is required.', 'error');
+        showToast('Contact name is required.', 'error');
         return;
     }
     if (!email) {
@@ -5001,17 +5001,17 @@ async function saveNewFriend(event) {
         });
 
         if (!res || !res.success) {
-            throw new Error(res?.message || 'Failed to add friend.');
+            throw new Error(res?.message || 'Failed to add contact.');
         }
 
-        showToast('Friend added successfully!', 'success');
+        showToast('Contact added successfully!', 'success');
         closeModule();
         renderFriends();
     } catch (err) {
-        showToast(err.message || 'Error adding friend', 'error');
+        showToast(err.message || 'Error adding contact', 'error');
         if (btn) {
             btn.disabled = false;
-            btn.innerText = 'Add Friend';
+            btn.innerText = 'Add Contact';
         }
     }
 }
@@ -5027,7 +5027,7 @@ function openAddFriendPaymentModal(friendId) {
         <div class="friend-modal-card">
             <div class="friend-modal-header">
                 <div class="friend-modal-title-box">
-                    <h3>Add Payment for Friend</h3>
+                    <h3>Add Payment for Contact</h3>
                     <p>Record money you paid on their behalf</p>
                 </div>
                 <button type="button" class="close-circle" onclick="closeModule()" title="Close">
@@ -5051,7 +5051,7 @@ function openAddFriendPaymentModal(friendId) {
                     <div class="friend-checkbox-card">
                         <input type="checkbox" id="sendEmailCheckbox" checked />
                         <label for="sendEmailCheckbox">
-                            <span class="checkbox-title">Send email notification to friend</span>
+                            <span class="checkbox-title">Send email notification to contact</span>
                             <span class="checkbox-sub">An email summary will be delivered to their inbox</span>
                         </label>
                     </div>
@@ -5192,7 +5192,7 @@ async function saveFriendSettlement(event, friendId) {
 }
 
 async function confirmDeleteFriend(friendId, friendName) {
-    if (!confirm(`Are you sure you want to delete ${friendName}? All transaction history for this friend will be deleted.`)) {
+    if (!confirm(`Are you sure you want to delete ${friendName}? All transaction history for this contact will be deleted.`)) {
         return;
     }
 
@@ -5202,12 +5202,12 @@ async function confirmDeleteFriend(friendId, friendName) {
         });
 
         if (!res || !res.success) {
-            throw new Error(res?.message || 'Failed to delete friend.');
+            throw new Error(res?.message || 'Failed to delete contact.');
         }
 
-        showToast('Friend removed.', 'success');
+        showToast('Contact removed.', 'success');
         renderFriends();
     } catch (err) {
-        showToast(err.message || 'Error deleting friend', 'error');
+        showToast(err.message || 'Error deleting contact', 'error');
     }
 }
