@@ -1238,53 +1238,55 @@ function openEditProfileModal() {
     const hasPic = !!STATE.tempProfilePic;
 
     panelContent.innerHTML = `
-        <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem;">
-            <h2 style="font-size: 1.3rem; font-weight: 700; color: var(--text-main); margin: 0;">Edit Profile</h2>
-            <button class="close-circle" onclick="closeModule()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer;">
-                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <use href="#icon-x"></use>
-                </svg>
-            </button>
+        <div class="profile-modal-container">
+            <div class="profile-modal-header">
+                <h2>Edit Profile</h2>
+                <button class="close-circle" onclick="closeModule()" aria-label="Close modal">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <use href="#icon-x"></use>
+                    </svg>
+                </button>
+            </div>
+
+            <form class="profile-edit-form" onsubmit="event.preventDefault(); saveProfileChanges();">
+                <!-- Avatar Upload Section -->
+                <div class="profile-upload-section">
+                    <div id="profilePreviewContainer">
+                        ${hasPic
+                            ? `<img src="${escapeHtml(STATE.tempProfilePic)}" id="profilePicPreview" class="profile-preview-avatar" alt="Preview" />`
+                            : `<div id="profilePicPreviewFallback" class="profile-avatar-fallback" style="width:84px; height:84px; font-size:1.8rem;">${escapeHtml(initials)}</div>`
+                        }
+                    </div>
+                    <input type="file" id="profilePicInput" accept="image/png, image/jpeg, image/jpg, image/webp" style="display:none;" onchange="handleProfilePicChange(event)" />
+                    <div class="profile-upload-controls">
+                        <button type="button" class="upload-btn" onclick="document.getElementById('profilePicInput').click()">Choose Photo</button>
+                        <button type="button" class="remove-btn" id="removePicBtn" onclick="handleRemoveProfilePic()" style="${hasPic ? '' : 'display:none;'}">Remove</button>
+                    </div>
+                </div>
+
+                <!-- Inputs -->
+                <div class="profile-input-group">
+                    <label for="editProfileName">Full Name</label>
+                    <input type="text" id="editProfileName" class="profile-input" value="${escapeHtml(user.name || '')}" placeholder="Enter your full name" required maxlength="100" />
+                </div>
+
+                <div class="profile-input-group">
+                    <label for="editProfileEmail">Email Address (Read-only)</label>
+                    <input type="email" id="editProfileEmail" class="profile-input" value="${escapeHtml(user.email || '')}" readonly />
+                </div>
+
+                <div class="profile-input-group">
+                    <label for="editProfilePhone">Phone Number (Optional)</label>
+                    <input type="tel" id="editProfilePhone" class="profile-input" value="${escapeHtml(user.phone || '')}" placeholder="e.g. +91 98765 43210" maxlength="25" />
+                </div>
+
+                <!-- Actions -->
+                <div class="profile-modal-actions">
+                    <button type="button" class="profile-modal-cancel" onclick="closeModule()">Cancel</button>
+                    <button type="submit" class="profile-modal-save" id="saveProfileBtn">Save Changes</button>
+                </div>
+            </form>
         </div>
-
-        <form class="profile-edit-form" onsubmit="event.preventDefault(); saveProfileChanges();">
-            <!-- Avatar Upload Section -->
-            <div class="profile-upload-section">
-                <div id="profilePreviewContainer">
-                    ${hasPic
-                        ? `<img src="${escapeHtml(STATE.tempProfilePic)}" id="profilePicPreview" class="profile-preview-avatar" alt="Preview" />`
-                        : `<div id="profilePicPreviewFallback" class="profile-avatar-fallback" style="width:90px; height:90px; font-size:2rem;">${escapeHtml(initials)}</div>`
-                    }
-                </div>
-                <input type="file" id="profilePicInput" accept="image/png, image/jpeg, image/jpg, image/webp" style="display:none;" onchange="handleProfilePicChange(event)" />
-                <div class="profile-upload-controls">
-                    <button type="button" class="upload-btn" onclick="document.getElementById('profilePicInput').click()">Choose Photo</button>
-                    <button type="button" class="remove-btn" id="removePicBtn" onclick="handleRemoveProfilePic()" style="${hasPic ? '' : 'display:none;'}">Remove</button>
-                </div>
-            </div>
-
-            <!-- Inputs -->
-            <div class="profile-input-group">
-                <label for="editProfileName">Full Name</label>
-                <input type="text" id="editProfileName" class="profile-input" value="${escapeHtml(user.name || '')}" placeholder="Enter your full name" required maxlength="100" />
-            </div>
-
-            <div class="profile-input-group">
-                <label for="editProfileEmail">Email Address (Read-only)</label>
-                <input type="email" id="editProfileEmail" class="profile-input" value="${escapeHtml(user.email || '')}" readonly />
-            </div>
-
-            <div class="profile-input-group">
-                <label for="editProfilePhone">Phone Number (Optional)</label>
-                <input type="tel" id="editProfilePhone" class="profile-input" value="${escapeHtml(user.phone || '')}" placeholder="e.g. +91 98765 43210" maxlength="25" />
-            </div>
-
-            <!-- Actions -->
-            <div class="profile-modal-actions">
-                <button type="button" class="profile-modal-cancel" onclick="closeModule()">Cancel</button>
-                <button type="submit" class="profile-modal-save" id="saveProfileBtn">Save Changes</button>
-            </div>
-        </form>
     `;
 
     overlay.classList.add('active');

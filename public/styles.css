@@ -7139,7 +7139,62 @@ body:has(.login-view) {
     color: var(--primary);
 }
 
-/* Edit Profile Modal */
+/* Edit Profile Modal Container */
+.profile-modal-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-height: 85vh;
+    padding: 1.75rem 2rem 2rem;
+    overflow-y: auto;
+    box-sizing: border-box;
+    gap: 1.25rem;
+}
+
+.profile-modal-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.profile-modal-container::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: 4px;
+}
+
+.profile-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.profile-modal-header h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.profile-modal-header .close-circle {
+    background: var(--bg-color);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.profile-modal-header .close-circle:hover {
+    color: var(--text-main);
+    background: var(--primary-light);
+    border-color: var(--primary);
+}
+
 .profile-edit-form {
     display: flex;
     flex-direction: column;
@@ -7151,26 +7206,25 @@ body:has(.login-view) {
     flex-direction: column;
     align-items: center;
     gap: 0.75rem;
-    padding: 1rem;
+    padding: 1.25rem 1rem;
     background: var(--bg-color);
     border: 1px dashed var(--border);
     border-radius: 16px;
-    margin-bottom: 0.5rem;
 }
 
 .profile-preview-avatar {
-    width: 90px;
-    height: 90px;
+    width: 84px;
+    height: 84px;
     border-radius: 50%;
     object-fit: cover;
-    border: 2px solid var(--primary);
+    border: 3px solid var(--primary);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
 }
 
 .profile-upload-controls {
     display: flex;
     gap: 0.75rem;
     align-items: center;
-    flex-wrap: wrap;
     justify-content: center;
 }
 
@@ -7178,7 +7232,7 @@ body:has(.login-view) {
     background: var(--primary-light);
     color: var(--primary);
     border: 1px solid var(--primary);
-    padding: 0.45rem 1rem;
+    padding: 0.5rem 1.2rem;
     border-radius: 10px;
     font-size: 0.88rem;
     font-weight: 600;
@@ -7195,7 +7249,7 @@ body:has(.login-view) {
     background: transparent;
     color: var(--error);
     border: 1px solid var(--error);
-    padding: 0.45rem 1rem;
+    padding: 0.5rem 1.2rem;
     border-radius: 10px;
     font-size: 0.88rem;
     font-weight: 600;
@@ -7216,14 +7270,15 @@ body:has(.login-view) {
 }
 
 .profile-input-group label {
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     font-weight: 600;
     color: var(--text-main);
 }
 
 .profile-input {
     width: 100%;
-    padding: 0.75rem 1rem;
+    height: 46px;
+    padding: 0 1rem;
     border-radius: 12px;
     border: 1px solid var(--border);
     background: var(--card-bg);
@@ -7249,15 +7304,47 @@ body:has(.login-view) {
     display: flex;
     justify-content: flex-end;
     gap: 0.85rem;
-    margin-top: 0.75rem;
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
 }
 
 .profile-modal-cancel {
     background: transparent;
     color: var(--text-muted);
     border: 1px solid var(--border);
-    padding: 0.65rem 1.4rem;
+    height: 44px;
+    padding: 0 1.4rem;
     border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.profile-modal-cancel:hover {
+    background: var(--bg-color);
+    color: var(--text-main);
+}
+
+.profile-modal-save {
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    height: 44px;
+    padding: 0 1.6rem;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.profile-modal-save:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
