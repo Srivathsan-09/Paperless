@@ -227,9 +227,22 @@ window.handleHeaderBack = function (e) {
     // 3. Fallback: Configured Action
     const action = window.currentBackAction;
     if (action) {
-        if (typeof action === 'function') action();
-        else if (action === 'renderDashboard' || action.includes('renderDashboard')) renderDashboard();
-        else try { window.eval(action); } catch (err) { renderDashboard(); }
+        if (typeof action === 'function') {
+            action();
+        } else if (typeof window[action] === 'function') {
+            window[action]();
+        } else if (action === 'renderDashboard' || action.includes('renderDashboard')) {
+            renderDashboard();
+        } else {
+            try {
+                const actionStr = action.endsWith('()') ? action : `${action}()`;
+                const fn = new Function(actionStr);
+                fn();
+            } catch (err) {
+                console.error('Error executing back action:', err);
+                renderDashboard();
+            }
+        }
         return;
     }
 
