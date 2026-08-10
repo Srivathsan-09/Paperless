@@ -2099,6 +2099,11 @@ function closeModule(fallbackId) {
         return;
     }
 
+    // Do not navigate to Dashboard if closing modal from Profile, About, or custom views
+    if (STATE.view === 'profile' || STATE.view === 'about') {
+        return;
+    }
+
     // FIX: If we auto-opened a leaf category, closing it should go to dashboard
     if (STATE.isAutoOpened) {
         STATE.isAutoOpened = false;
