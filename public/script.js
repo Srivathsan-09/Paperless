@@ -999,7 +999,7 @@ function renderAbout() {
     });
 
     const main = document.getElementById('mainContent');
-    main.className = 'view-container about-view-wrapper';
+    main.className = 'view-container about-view';
     main.innerHTML = `
         <div class="about-container">
             <!-- Header Section -->
@@ -1172,36 +1172,11 @@ function renderAbout() {
 
             <hr class="about-divider" />
 
-            <!-- Built With -->
-            <section class="about-section">
-                <h2 class="about-section-title">Built With</h2>
-                <div class="about-tech-grid">
-                    <div class="about-tech-box">
-                        <span class="about-tech-label">Frontend</span>
-                        <span class="about-tech-val">HTML • CSS • JavaScript</span>
-                    </div>
-                    <div class="about-tech-box">
-                        <span class="about-tech-label">Backend</span>
-                        <span class="about-tech-val">Node.js • Express.js</span>
-                    </div>
-                    <div class="about-tech-box">
-                        <span class="about-tech-label">Database</span>
-                        <span class="about-tech-val">MongoDB</span>
-                    </div>
-                    <div class="about-tech-box">
-                        <span class="about-tech-label">Authentication</span>
-                        <span class="about-tech-val">JWT / Google Authentication</span>
-                    </div>
-                </div>
-            </section>
-
-            <hr class="about-divider" />
-
             <!-- What Paperless aims to do -->
             <section class="about-section">
                 <div class="about-aims-card">
-                    <h2 class="about-section-title" style="margin-bottom: 0.5rem;">What Paperless aims to do</h2>
-                    <p class="about-text" style="margin-bottom: 0.5rem;">
+                    <h2 class="about-section-title" style="margin-bottom: 0.4rem;">What Paperless aims to do</h2>
+                    <p class="about-text" style="margin-bottom: 0.4rem;">
                         Paperless aims to make personal expense tracking simple enough to become an everyday habit.
                     </p>
                     <p class="about-text" style="margin: 0;">
