@@ -291,10 +291,10 @@ const HeaderManager = {
         if (logo) logo.style.display = 'block';
         if (monthTrigger) monthTrigger.style.visibility = 'visible';
 
-        // Toggle Menu Button visibility when Back button is active (replacing hamburger slot)
+        // Toggle Menu Button visibility (On mobile, Back replaces hamburger; on desktop, hamburger remains visible)
         const menuBtn = document.getElementById('menuBtn');
         if (menuBtn) {
-            if (config.showBack) {
+            if (isMobile && config.showBack) {
                 menuBtn.style.display = 'none';
             } else {
                 menuBtn.style.display = 'flex';
@@ -314,16 +314,40 @@ const HeaderManager = {
             }
         };
 
-        // 2. Back Button (Replaces Hamburger Slot)
+        // 2. Back Button Positioning
         if (config.showBack && backBtnContainer) {
             backBtnContainer.style.display = 'flex';
-            backBtnContainer.innerHTML = `
-                <button id="dynamicBackBtn" class="back-btn-v3" onclick="window.handleHeaderBack(event)" aria-label="Go Back" title="Go Back">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <use href="#icon-arrow-left"></use>
-                    </svg>
-                </button>
-            `;
+
+            if (isMobile) {
+                backBtnContainer.innerHTML = `
+                    <button id="dynamicBackBtn" class="back-btn-v3" onclick="window.handleHeaderBack(event)" aria-label="Go Back" title="Go Back">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <use href="#icon-arrow-left"></use>
+                        </svg>
+                    </button>
+                `;
+            } else {
+                let labelText = config.backText;
+                if (!labelText) {
+                    if (config.onBack === 'renderSettings') {
+                        labelText = 'Back to Settings';
+                    } else if (config.onBack === 'renderFriends') {
+                        labelText = 'Back to Settlements';
+                    } else {
+                        labelText = 'Back to Home';
+                    }
+                }
+
+                backBtnContainer.innerHTML = `
+                    <button id="dynamicBackBtn" class="header-desktop-back-btn" onclick="window.handleHeaderBack(event)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span>${labelText}</span>
+                    </button>
+                `;
+            }
         }
 
         // 3. Sub Content (Tabs/etc)

@@ -171,13 +171,19 @@ body::after {
 /* Base Header Styling - Desktop (Locked) */
 .app-header {
     height: 65px;
-    padding: 0 1.5rem;
+    padding: 0 2.25rem;
     display: flex;
     align-items: center;
     background: transparent;
     box-shadow: none;
     position: relative;
     z-index: 1000;
+}
+
+@media (max-width: 768px) {
+    .app-header {
+        padding: 0 1rem;
+    }
 }
 
 #menuBtn {
@@ -404,6 +410,7 @@ body::after {
         z-index: 10;
         display: flex;
         align-items: center;
+        width: auto !important;
     }
 
     .header-left {
@@ -411,7 +418,7 @@ body::after {
         margin-left: 0 !important;
         display: flex !important;
         align-items: center !important;
-        gap: 0.85rem !important;
+        gap: 1rem !important;
     }
 }
 
