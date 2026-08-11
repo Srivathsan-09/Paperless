@@ -334,17 +334,20 @@ body::after {
     background: transparent !important;
     padding: 8px !important;
     border: none !important;
-    color: #3b82f6 !important;
-    /* Vibrant Blue as requested */
-    border-radius: 50%;
+    color: var(--text-main) !important;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
 }
 
 #headerBackBtn .back-btn-v3:hover {
-    background: rgba(59, 130, 246, 0.1) !important;
-    color: #2563eb !important;
+    background: var(--primary-light) !important;
+    color: var(--primary) !important;
 }
 
 #headerBackBtn .back-btn-v3 svg {
