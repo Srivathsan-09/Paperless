@@ -1492,41 +1492,6 @@ async function renderBudgetLimits() {
         </div>
     `;
 
-    function renderBudgetUsageSummary(title, spent, limit) {
-        const parsedLimit = Number(limit) || 0;
-        const parsedSpent = Number(spent) || 0;
-        const pct = parsedLimit > 0 ? Math.min(100, Math.round((parsedSpent / parsedLimit) * 100)) : 0;
-        const isExceeded = parsedLimit > 0 && parsedSpent > parsedLimit;
-        const isWarning = parsedLimit > 0 && pct >= 80 && !isExceeded;
-        const remaining = parsedLimit > 0 ? Math.max(0, parsedLimit - parsedSpent) : 0;
-
-        let statusClass = 'status-normal';
-        if (isExceeded) statusClass = 'status-exceeded';
-        else if (isWarning) statusClass = 'status-warning';
-
-        return `
-            <div class="usage-header">
-                <span class="usage-title">${title}</span>
-                <span class="usage-badge ${statusClass}">${parsedLimit > 0 ? `${pct}% used` : 'No limit set'}</span>
-            </div>
-            <div class="usage-numbers">
-                <span class="usage-spent">₹${parsedSpent.toLocaleString()}</span>
-                <span class="usage-separator">/</span>
-                <span class="usage-limit">${parsedLimit > 0 ? `₹${parsedLimit.toLocaleString()}` : '₹--'}</span>
-            </div>
-            <div class="budget-progress-track">
-                <div class="budget-progress-fill ${statusClass}" style="width: ${parsedLimit > 0 ? Math.min(100, (parsedSpent / parsedLimit) * 100) : 0}%;"></div>
-            </div>
-            <div class="usage-footer">
-                ${parsedLimit > 0 ? (
-                    isExceeded
-                        ? `<span class="remaining-text exceeded">Exceeded by ₹${(parsedSpent - parsedLimit).toLocaleString()}</span>`
-                        : `<span class="remaining-text">Remaining: ₹${remaining.toLocaleString()}</span>`
-                ) : `<span class="remaining-text muted">Set a limit to start tracking</span>`}
-            </div>
-        `;
-    }
-
     const container = document.getElementById('categoryBudgetsContainer');
 
     if (categoryBudgets.length > 0 && container) {
@@ -1538,17 +1503,15 @@ async function renderBudgetLimits() {
 
     function createCategoryBudgetRow(item = { categoryId: '', categoryName: '', limit: '' }) {
         const div = document.createElement('div');
-        div.className = 'category-budget-row';
+        div.className = 'category-budget-row-v2';
 
         const selCatName = item.categoryName || '';
         const limitVal = item.limit !== undefined && item.limit !== null && item.limit !== '' ? item.limit : '';
-        const currentSpent = selCatName ? calculateCategorySpending(selCatName) : 0;
 
         div.innerHTML = `
-            <div class="row-inputs-grid">
-                <div class="budget-input-group">
-                    <label class="budget-label mobile-only">Category</label>
-                    <select class="settings-input budget-category-select">
+            <div class="cat-row-grid-v2">
+                <div class="cat-select-wrapper-v2">
+                    <select class="settings-select-v2 budget-category-select">
                         <option value="">-- Select Category --</option>
                         ${availableCategories.map(c => `
                             <option value="${c.name}" data-id="${c._id || c.id || ''}" ${c.name === selCatName ? 'selected' : ''}>
@@ -1557,44 +1520,25 @@ async function renderBudgetLimits() {
                         `).join('')}
                     </select>
                 </div>
-                <div class="budget-input-group">
-                    <label class="budget-label mobile-only">Monthly Limit (₹)</label>
-                    <div class="currency-input-wrapper">
-                        <span class="currency-symbol">₹</span>
-                        <input type="number" class="settings-input budget-limit-input" placeholder="e.g. 5000" min="0" value="${limitVal}">
-                    </div>
+                <div class="cat-limit-wrapper-v2">
+                    <span class="cat-currency-symbol-v2">₹</span>
+                    <input type="number" class="settings-input-v2 cat-limit-input-v2 budget-limit-input" placeholder="Limit e.g. 5000" min="0" value="${limitVal}">
                 </div>
-                <button type="button" class="budget-remove-btn" title="Remove Category Budget">
+                <button type="button" class="cat-remove-btn-v2 budget-remove-btn" title="Remove Category Limit">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
                 </button>
             </div>
-            <div class="category-usage-preview">
-                ${renderBudgetUsageSummary(selCatName || 'Selected Category', currentSpent, limitVal)}
-            </div>
         `;
 
-        const selectEl = div.querySelector('.budget-category-select');
-        const limitEl = div.querySelector('.budget-limit-input');
         const removeBtn = div.querySelector('.budget-remove-btn');
-        const usagePreviewEl = div.querySelector('.category-usage-preview');
-
-        function updateRowPreview() {
-            const catName = selectEl.value;
-            const limit = Number(limitEl.value) || 0;
-            const spent = catName ? calculateCategorySpending(catName) : 0;
-            usagePreviewEl.innerHTML = renderBudgetUsageSummary(catName || 'Selected Category', spent, limit);
-        }
-
-        selectEl.addEventListener('change', updateRowPreview);
-        limitEl.addEventListener('input', updateRowPreview);
 
         removeBtn.addEventListener('click', () => {
             div.remove();
             if (container) {
-                const remainingRows = container.querySelectorAll('.category-budget-row');
+                const remainingRows = container.querySelectorAll('.category-budget-row-v2');
                 if (remainingRows.length === 0) {
                     const emptyMsg = document.createElement('div');
                     emptyMsg.className = 'empty-category-v2';
@@ -1614,16 +1558,6 @@ async function renderBudgetLimits() {
         });
 
         return div;
-    }
-
-    const overallInput = document.getElementById('overallBudgetInput');
-    const overallCard = document.getElementById('overallUsageCard');
-
-    if (overallInput && overallCard) {
-        overallInput.addEventListener('input', () => {
-            const val = Number(overallInput.value) || 0;
-            overallCard.innerHTML = renderBudgetUsageSummary('Overall Spending', totalMonthSpent, val);
-        });
     }
 
     const addBtn = document.getElementById('addCategoryBudgetBtn');
@@ -1646,7 +1580,7 @@ async function renderBudgetLimits() {
         saveBtn.addEventListener('click', async () => {
             const overallVal = Number(document.getElementById('overallBudgetInput')?.value) || 0;
 
-            const categoryRows = container ? container.querySelectorAll('.category-budget-row') : [];
+            const categoryRows = container ? container.querySelectorAll('.category-budget-row-v2, .category-budget-row') : [];
             const categoryBudgetsList = [];
 
             categoryRows.forEach(row => {
