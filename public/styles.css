@@ -333,65 +333,39 @@ body::after {
     position: relative !important;
 }
 
-#headerBackBtn {
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
+#menuBtn {
     background: transparent !important;
-    box-shadow: none !important;
+    border: none !important;
+    color: var(--text-main) !important;
+    cursor: pointer !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 40px !important;
-    height: 40px !important;
-    flex-shrink: 0 !important;
-    position: static !important;
-    left: auto !important;
-    top: auto !important;
-    transform: none !important;
-}
-
-#headerBackBtn .back-btn-v3,
-.dark-theme #headerBackBtn .back-btn-v3,
-.light-theme #headerBackBtn .back-btn-v3,
-#dynamicBackBtn {
-    background: transparent !important;
     padding: 8px !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    color: var(--text-main) !important;
     width: 40px !important;
     height: 40px !important;
     border-radius: 8px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
     transition: var(--transition) !important;
     margin: 0 !important;
     position: static !important;
-    left: auto !important;
-    top: auto !important;
     transform: none !important;
-}
-
-#headerBackBtn .back-btn-v3:hover,
-.dark-theme #headerBackBtn .back-btn-v3:hover,
-.light-theme #headerBackBtn .back-btn-v3:hover,
-#dynamicBackBtn:hover {
-    background: var(--primary-light) !important;
-    color: var(--primary) !important;
-    border: none !important;
     box-shadow: none !important;
+    outline: none !important;
+    flex-shrink: 0 !important;
+}
+
+#menuBtn:hover {
+    background-color: var(--primary-light) !important;
+    color: var(--primary) !important;
     transform: none !important;
 }
 
-#headerBackBtn .back-btn-v3 svg,
-#dynamicBackBtn svg {
+#menuBtn svg {
     width: 24px !important;
     height: 24px !important;
     stroke-width: 2.5 !important;
+    display: block;
+    margin: 0 auto;
 }
 
 /* Desktop Header Back Button & Flex Layout Positioning */
@@ -432,16 +406,6 @@ body::after {
 @media (min-width: 769px) {
     .header-main-row {
         position: relative;
-    }
-
-    #headerBackBtn {
-        position: relative !important;
-        left: auto !important;
-        top: auto !important;
-        transform: none !important;
-        z-index: 10;
-        display: flex;
-        align-items: center;
     }
 
     .header-left {
@@ -557,11 +521,6 @@ body::after {
         justify-content: flex-start;
         gap: 0.5rem;
         /* Space between Back, Menu, Theme */
-    }
-
-    #headerBackBtn {
-        position: static !important;
-        transform: none !important;
     }
 
     .header-center {
@@ -2023,10 +1982,7 @@ textarea:focus {
     }
 }
 
-#headerBackBtn {
-    margin: 0 !important;
-    padding: 0 !important;
-}
+
 
 .overhaul-header {
     margin-bottom: 1.5rem;
