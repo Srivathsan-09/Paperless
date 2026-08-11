@@ -1888,7 +1888,7 @@ function renderNotificationsUI(prefs, notifications) {
                 </div>
 
                 <div class="settings-actions">
-                    <button type="button" id="saveNotificationPrefsBtn" class="action-btn primary save-budget-btn">
+                    <button type="button" id="saveNotificationPrefsBtn" class="save-budget-btn-v2">
                         <span>Save Changes</span>
                     </button>
                 </div>
@@ -2080,6 +2080,54 @@ window.deleteSingleNotification = async function(id) {
         console.error('Delete notification error:', err);
     }
 };
+
+// --- BROWSER PUSH NOTIFICATIONS ---
+async function checkAndShowPushNotifications() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    if (!STATE.isLoggedIn) return;
+
+    try {
+        const data = await fetchAPI(`/api/notifications?month=${STATE.selectedMonth}&year=${STATE.selectedYear}`);
+        if (data && data.success && data.notifications) {
+            let shownIds = [];
+            try {
+                shownIds = JSON.parse(localStorage.getItem('shown_notifications') || '[]');
+            } catch (e) {
+                shownIds = [];
+            }
+
+            let newlyShown = false;
+
+            data.notifications.forEach(note => {
+                if (!note.isRead && !shownIds.includes(note._id)) {
+                    // Show standard OS push notification in notification bar
+                    const pushNote = new Notification(note.title || 'Paperless Alert', {
+                        body: note.message,
+                        icon: '/Logo2.png',
+                        badge: '/Logo2.png',
+                        requireInteraction: true
+                    });
+
+                    pushNote.onclick = function() {
+                        window.focus();
+                        renderNotifications();
+                        pushNote.close();
+                    };
+
+                    shownIds.push(note._id);
+                    newlyShown = true;
+                }
+            });
+
+            if (newlyShown) {
+                localStorage.setItem('shown_notifications', JSON.stringify(shownIds));
+            }
+        }
+    } catch (err) {
+        console.error('Error checking push notifications:', err);
+    }
+}
 
 function getUserInitials(name) {
     if (!name || !name.trim()) return 'U';
@@ -5078,6 +5126,18 @@ async function initAdminLink() {
 // --- INITIALIZATION ---
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Request notification permission on first user click
+    document.addEventListener('click', () => {
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+    }, { once: true });
+
+    // Initial check for push notifications on login/load
+    setTimeout(checkAndShowPushNotifications, 2000);
+    // Periodically check for new notifications every 60 seconds
+    setInterval(checkAndShowPushNotifications, 60000);
+
     // --- AUTH TOKEN HANDLING ---
     // URL params are now handled in checkAuth() at the top of the file
     // to ensure they are captured before URL cleaning and to handle initial redirects.
