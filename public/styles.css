@@ -8519,9 +8519,18 @@ body:has(.login-view) {
 }
 
 .currency-wrapper-v2 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+}
+
+.input-with-symbol-v2 {
     position: relative;
     display: flex;
     align-items: center;
+    flex: 1;
+    min-width: 0;
 }
 
 .currency-symbol-v2 {
@@ -8531,10 +8540,13 @@ body:has(.login-view) {
     color: var(--primary);
     font-size: 1.35rem;
     pointer-events: none;
+    z-index: 2;
 }
 
 .settings-input-v2 {
+    flex: 1;
     width: 100%;
+    min-width: 0;
     height: 52px;
     padding: 0 1rem 0 2.5rem;
     background: var(--card-bg);
@@ -8549,6 +8561,46 @@ body:has(.login-view) {
 
     /* Hide standard number arrows */
     -moz-appearance: textfield;
+}
+
+.save-target-btn-v2 {
+    height: 52px;
+    padding: 0 1.25rem;
+    background: var(--primary);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.save-target-btn-v2:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35);
+}
+
+.save-target-btn-v2:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+    .currency-wrapper-v2 {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .save-target-btn-v2 {
+        width: 100%;
+    }
 }
 
 .settings-input-v2::-webkit-outer-spin-button,
@@ -8630,24 +8682,24 @@ body:has(.login-view) {
 .add-cat-btn-v2 {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    height: 42px;
-    padding: 0 1.2rem;
+    gap: 0.4rem;
+    height: 36px;
+    padding: 0 1rem;
     background: var(--primary);
     color: #ffffff;
     border: none;
-    border-radius: 12px;
-    font-size: 0.88rem;
+    border-radius: 10px;
+    font-size: 0.84rem;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition);
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
+    box-shadow: 0 3px 10px rgba(99, 102, 241, 0.2);
 }
 
 .add-cat-btn-v2:hover {
     background: var(--primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 5px 14px rgba(99, 102, 241, 0.3);
 }
 
 .category-budgets-list-v2 {
@@ -8820,22 +8872,22 @@ body:has(.login-view) {
     background: linear-gradient(135deg, var(--primary) 0%, #818cf8 100%) !important;
     color: #ffffff !important;
     border: none !important;
-    height: 48px;
-    padding: 0 2rem;
-    border-radius: 14px;
-    font-size: 0.98rem;
+    height: 40px;
+    padding: 0 1.5rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.5rem;
     transition: var(--transition);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
 }
 
 .save-budget-btn-v2:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.45);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.35);
 }
 
 /* ==========================================

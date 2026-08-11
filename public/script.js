@@ -1454,8 +1454,18 @@ async function renderBudgetLimits() {
                     <div class="budget-input-v2">
                         <label for="overallBudgetInput" class="budget-label-v2">Set Spending Target (₹)</label>
                         <div class="currency-wrapper-v2">
-                            <span class="currency-symbol-v2">₹</span>
-                            <input type="number" id="overallBudgetInput" class="settings-input-v2" placeholder="20,000" min="0" value="${overallBudget > 0 ? overallBudget : ''}">
+                            <div class="input-with-symbol-v2">
+                                <span class="currency-symbol-v2">₹</span>
+                                <input type="number" id="overallBudgetInput" class="settings-input-v2" placeholder="20,000" min="0" value="${overallBudget > 0 ? overallBudget : ''}">
+                            </div>
+                            <button type="button" id="saveSpendingTargetBtn" class="save-target-btn-v2" title="Save Spending Target">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                </svg>
+                                <span>Save Target</span>
+                            </button>
                         </div>
                         <div class="quick-preset-chips">
                             <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=10000;">₹10k</span>
@@ -1475,7 +1485,7 @@ async function renderBudgetLimits() {
                         <p class="category-section-desc">Assign specific monthly spending caps for individual categories.</p>
                     </div>
                     <button type="button" id="addCategoryBudgetBtn" class="add-cat-btn-v2">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
@@ -1501,7 +1511,7 @@ async function renderBudgetLimits() {
             <!-- Sticky Save Bar -->
             <div class="budget-save-footer">
                 <button type="button" id="saveBudgetBtn" class="save-budget-btn-v2">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                         <polyline points="17 21 17 13 7 13 7 21"></polyline>
                         <polyline points="7 3 7 8 15 8"></polyline>
@@ -1595,6 +1605,61 @@ async function renderBudgetLimits() {
         });
     }
 
+    const saveTargetBtn = document.getElementById('saveSpendingTargetBtn');
+    if (saveTargetBtn) {
+        saveTargetBtn.addEventListener('click', async () => {
+            const overallVal = Number(document.getElementById('overallBudgetInput')?.value) || 0;
+
+            const categoryRows = container ? container.querySelectorAll('.category-budget-row-v2, .category-budget-row') : [];
+            const categoryBudgetsList = [];
+
+            categoryRows.forEach(row => {
+                const selectEl = row.querySelector('.budget-category-select');
+                const limitEl = row.querySelector('.budget-limit-input');
+
+                const catName = selectEl?.value?.trim();
+                const selectedOption = selectEl?.options[selectEl.selectedIndex];
+                const catId = selectedOption ? selectedOption.getAttribute('data-id') || '' : '';
+                const limitNum = Number(limitEl?.value) || 0;
+
+                if (catName && limitNum > 0) {
+                    categoryBudgetsList.push({
+                        categoryId: catId,
+                        categoryName: catName,
+                        limit: limitNum
+                    });
+                }
+            });
+
+            saveTargetBtn.disabled = true;
+            saveTargetBtn.innerHTML = `
+                <svg class="spinner" viewBox="0 0 50 50" style="width: 16px; height: 16px; animation: spin 1s linear infinite; margin-right: 4px;">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
+                </svg>
+                Saving...
+            `;
+
+            const success = await saveBudget({
+                overallBudget: overallVal,
+                categoryBudgets: categoryBudgetsList
+            });
+
+            saveTargetBtn.disabled = false;
+            saveTargetBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span>Save Target</span>
+            `;
+
+            if (success) {
+                renderBudgetLimits();
+            }
+        });
+    }
+
     const saveBtn = document.getElementById('saveBudgetBtn');
     if (saveBtn) {
         saveBtn.addEventListener('click', async () => {
@@ -1623,7 +1688,7 @@ async function renderBudgetLimits() {
 
             saveBtn.disabled = true;
             saveBtn.innerHTML = `
-                <svg class="spinner" viewBox="0 0 50 50" style="width: 18px; height: 18px; animation: spin 1s linear infinite; margin-right: 6px;">
+                <svg class="spinner" viewBox="0 0 50 50" style="width: 16px; height: 16px; animation: spin 1s linear infinite; margin-right: 6px;">
                     <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
                 </svg>
                 Saving...
@@ -1636,7 +1701,7 @@ async function renderBudgetLimits() {
 
             saveBtn.disabled = false;
             saveBtn.innerHTML = `
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                     <polyline points="17 21 17 13 7 13 7 21"></polyline>
                     <polyline points="7 3 7 8 15 8"></polyline>
