@@ -1387,12 +1387,13 @@ async function renderSettings() {
                 <div class="budget-section">
                     <h3 class="budget-section-title">1. Overall Monthly Budget</h3>
                     <div class="budget-overall-grid">
-                        <div class="budget-input-group">
+                        <div class="budget-input-card">
                             <label for="overallBudgetInput" class="budget-label">Total Monthly Spending Limit (₹)</label>
                             <div class="currency-input-wrapper">
                                 <span class="currency-symbol">₹</span>
                                 <input type="number" id="overallBudgetInput" class="settings-input" placeholder="e.g. 20000" min="0" value="${overallBudget > 0 ? overallBudget : ''}">
                             </div>
+                            <p class="budget-input-hint">Set your max spending threshold for the current month.</p>
                         </div>
 
                         <!-- Overall Usage Stats -->
