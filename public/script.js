@@ -291,10 +291,10 @@ const HeaderManager = {
         if (logo) logo.style.display = 'block';
         if (monthTrigger) monthTrigger.style.visibility = 'visible';
 
-        // Toggle Menu Button visibility (On mobile, Back replaces hamburger; on desktop, hamburger remains visible)
+        // Toggle Menu Button visibility when Back button is active (replacing hamburger slot)
         const menuBtn = document.getElementById('menuBtn');
         if (menuBtn) {
-            if (isMobile && config.showBack) {
+            if (config.showBack) {
                 menuBtn.style.display = 'none';
             } else {
                 menuBtn.style.display = 'flex';
@@ -314,40 +314,16 @@ const HeaderManager = {
             }
         };
 
-        // 2. Back Button Positioning
+        // 2. Back Button (Replaces Hamburger Slot)
         if (config.showBack && backBtnContainer) {
             backBtnContainer.style.display = 'flex';
-
-            if (isMobile) {
-                backBtnContainer.innerHTML = `
-                    <button id="dynamicBackBtn" class="back-btn-v3" onclick="window.handleHeaderBack(event)" aria-label="Go Back" title="Go Back">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <use href="#icon-arrow-left"></use>
-                        </svg>
-                    </button>
-                `;
-            } else {
-                let labelText = config.backText;
-                if (!labelText) {
-                    if (config.onBack === 'renderSettings') {
-                        labelText = 'Back to Settings';
-                    } else if (config.onBack === 'renderFriends') {
-                        labelText = 'Back to Settlements';
-                    } else {
-                        labelText = 'Back to Home';
-                    }
-                }
-
-                backBtnContainer.innerHTML = `
-                    <button id="dynamicBackBtn" class="header-desktop-back-btn" onclick="window.handleHeaderBack(event)">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="19" y1="12" x2="5" y2="12"></line>
-                            <polyline points="12 19 5 12 12 5"></polyline>
-                        </svg>
-                        <span>${labelText}</span>
-                    </button>
-                `;
-            }
+            backBtnContainer.innerHTML = `
+                <button id="dynamicBackBtn" class="back-btn-v3" onclick="window.handleHeaderBack(event)" aria-label="Go Back" title="Go Back">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <use href="#icon-arrow-left"></use>
+                    </svg>
+                </button>
+            `;
         }
 
         // 3. Sub Content (Tabs/etc)
@@ -1295,6 +1271,7 @@ async function renderSettings() {
             </div>
 
             <div class="settings-menu-list">
+                <!-- 1. Budget Limits -->
                 <div class="settings-menu-item" onclick="renderBudgetLimits()">
                     <div class="settings-item-left">
                         <div class="settings-item-icon">
@@ -1306,6 +1283,27 @@ async function renderSettings() {
                         <div class="settings-item-info">
                             <h3 class="settings-item-title">Budget Limits</h3>
                             <p class="settings-item-desc">Set overall & category monthly spending limits with automated tracking.</p>
+                        </div>
+                    </div>
+                    <div class="settings-item-arrow">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- 2. Notifications -->
+                <div class="settings-menu-item" onclick="renderNotifications()">
+                    <div class="settings-item-left">
+                        <div class="settings-item-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                        </div>
+                        <div class="settings-item-info">
+                            <h3 class="settings-item-title">Notifications</h3>
+                            <p class="settings-item-desc">Manage your spending alerts and notification preferences.</p>
                         </div>
                     </div>
                     <div class="settings-item-arrow">
@@ -1676,16 +1674,410 @@ function getUserInitials(name) {
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function formatMemberSince(dateStr) {
-    if (!dateStr) return 'N/A';
+async function renderNotifications() {
+    STATE.view = 'settings';
+    STATE.settingsSubView = 'notifications';
+    STATE.activeCategory = null;
+    STATE.activeSubcategory = null;
+
+    HeaderManager.update({
+        showBack: true,
+        onBack: 'renderSettings',
+        backText: 'Back to Settings',
+        hideMonthSelector: false
+    });
+
+    const main = document.getElementById('mainContent');
+    if (!main) return;
+    main.className = 'view-container settings-view';
+
+    // Immediate Loading State UI
+    main.innerHTML = `
+        <div class="settings-container">
+            <div class="settings-card loading-card">
+                <svg class="spinner" viewBox="0 0 50 50" style="width: 32px; height: 32px; animation: spin 1s linear infinite; margin-bottom: 12px; color: var(--primary);">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
+                </svg>
+                <p style="color: var(--text-muted); font-size: 0.95rem;">Loading notification preferences...</p>
+            </div>
+        </div>
+    `;
+
     try {
-        const d = new Date(dateStr);
-        if (isNaN(d.getTime())) return 'N/A';
-        return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    } catch (e) {
-        return 'N/A';
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/notifications?month=${STATE.selectedMonth}&year=${STATE.selectedYear}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to fetch notifications');
+        }
+
+        const prefs = data.preferences || {
+            budgetAlerts: true,
+            categoryAlerts: true,
+            monthlySummary: true,
+            unusualSpending: true,
+            alertThreshold: 75
+        };
+
+        const notifications = data.notifications || [];
+
+        renderNotificationsUI(prefs, notifications);
+
+    } catch (err) {
+        console.error('Fetch notifications error:', err);
+        showToast('Unable to load notification settings', 'error');
+        renderNotificationsUI({
+            budgetAlerts: true,
+            categoryAlerts: true,
+            monthlySummary: true,
+            unusualSpending: true,
+            alertThreshold: 75
+        }, []);
     }
 }
+
+function renderNotificationsUI(prefs, notifications) {
+    const main = document.getElementById('mainContent');
+    if (!main) return;
+
+    const selectedThreshold = prefs.alertThreshold || 75;
+
+    main.innerHTML = `
+        <div class="settings-container notification-settings-container">
+            <!-- Page Header -->
+            <div class="settings-header">
+                <h1 class="settings-title">Notifications</h1>
+                <p class="settings-subtitle">Manage your spending alerts and notification preferences.</p>
+            </div>
+
+            <!-- Card 1: Notification Preferences -->
+            <div class="settings-card notification-card">
+                <div class="card-header-with-icon">
+                    <div class="card-icon-wrapper">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="settings-card-title">Notification Preferences</h2>
+                        <p class="settings-card-desc">Configure automated spending alerts and reports.</p>
+                    </div>
+                </div>
+
+                <div class="notification-toggle-list">
+                    <!-- A. Budget Limit Alerts -->
+                    <div class="notification-toggle-row">
+                        <div class="toggle-info">
+                            <h3 class="toggle-title">Budget Limit Alerts</h3>
+                            <p class="toggle-desc">Get notified when your spending reaches your configured budget limits.</p>
+                        </div>
+                        <label class="switch-toggle" for="budgetAlertsToggle">
+                            <input type="checkbox" id="budgetAlertsToggle" ${prefs.budgetAlerts ? 'checked' : ''}>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- B. Category Budget Alerts -->
+                    <div class="notification-toggle-row">
+                        <div class="toggle-info">
+                            <h3 class="toggle-title">Category Budget Alerts</h3>
+                            <p class="toggle-desc">Get notified when spending in a category approaches or exceeds its limit.</p>
+                        </div>
+                        <label class="switch-toggle" for="categoryAlertsToggle">
+                            <input type="checkbox" id="categoryAlertsToggle" ${prefs.categoryAlerts ? 'checked' : ''}>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- C. Monthly Spending Summary -->
+                    <div class="notification-toggle-row">
+                        <div class="toggle-info">
+                            <h3 class="toggle-title">Monthly Spending Summary</h3>
+                            <p class="toggle-desc">Receive a summary of your spending at the end of each month.</p>
+                        </div>
+                        <label class="switch-toggle" for="monthlySummaryToggle">
+                            <input type="checkbox" id="monthlySummaryToggle" ${prefs.monthlySummary ? 'checked' : ''}>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- D. Unusual Spending Alerts -->
+                    <div class="notification-toggle-row">
+                        <div class="toggle-info">
+                            <h3 class="toggle-title">Unusual Spending Alerts</h3>
+                            <p class="toggle-desc">Get notified when your spending is significantly higher than usual.</p>
+                        </div>
+                        <label class="switch-toggle" for="unusualSpendingToggle">
+                            <input type="checkbox" id="unusualSpendingToggle" ${prefs.unusualSpending ? 'checked' : ''}>
+                            <span class="switch-slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-divider"></div>
+
+                <!-- Alert Threshold Section -->
+                <div class="threshold-section">
+                    <h3 class="threshold-title">Alert Threshold</h3>
+                    <p class="threshold-desc">Choose when you want to receive budget notifications.</p>
+
+                    <div class="threshold-options-grid">
+                        <label class="threshold-radio-card ${selectedThreshold === 50 ? 'selected' : ''}">
+                            <input type="radio" name="alertThreshold" value="50" ${selectedThreshold === 50 ? 'checked' : ''}>
+                            <span class="radio-circle"></span>
+                            <span class="threshold-text">50% of budget used</span>
+                        </label>
+
+                        <label class="threshold-radio-card ${selectedThreshold === 75 ? 'selected' : ''}">
+                            <input type="radio" name="alertThreshold" value="75" ${selectedThreshold === 75 ? 'checked' : ''}>
+                            <span class="radio-circle"></span>
+                            <span class="threshold-text">75% of budget used</span>
+                        </label>
+
+                        <label class="threshold-radio-card ${selectedThreshold === 90 ? 'selected' : ''}">
+                            <input type="radio" name="alertThreshold" value="90" ${selectedThreshold === 90 ? 'checked' : ''}>
+                            <span class="radio-circle"></span>
+                            <span class="threshold-text">90% of budget used</span>
+                        </label>
+
+                        <label class="threshold-radio-card ${selectedThreshold === 100 ? 'selected' : ''}">
+                            <input type="radio" name="alertThreshold" value="100" ${selectedThreshold === 100 ? 'checked' : ''}>
+                            <span class="radio-circle"></span>
+                            <span class="threshold-text">100% of budget used</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button type="button" id="saveNotificationPrefsBtn" class="action-btn primary save-budget-btn">
+                        <span>Save Changes</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Card 2: Recent Notifications -->
+            <div class="settings-card notification-card">
+                <div class="card-header-with-icon" style="justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="card-icon-wrapper">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="settings-card-title">Recent Notifications</h2>
+                            <p class="settings-card-desc">Your alert log for ${MONTHS[STATE.selectedMonth]} ${STATE.selectedYear}</p>
+                        </div>
+                    </div>
+
+                    ${notifications.some(n => !n.isRead) ? `
+                        <button type="button" id="markAllReadBtn" class="mark-all-read-btn">
+                            Mark all as read
+                        </button>
+                    ` : ''}
+                </div>
+
+                <div id="notificationsListContainer" class="notifications-list">
+                    ${notifications.length === 0 ? `
+                        <div class="empty-notifications-state">
+                            <div class="empty-notifications-icon">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                            </div>
+                            <h3>No notifications yet</h3>
+                            <p>You're all caught up.</p>
+                        </div>
+                    ` : notifications.map(item => renderNotificationItemHTML(item)).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    attachNotificationEventListeners();
+}
+
+function renderNotificationItemHTML(item) {
+    const isUnread = !item.isRead;
+    const dateObj = new Date(item.createdAt);
+    const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    let iconSvg = '';
+    if (item.type === 'budget') {
+        iconSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>`;
+    } else if (item.type === 'category') {
+        iconSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>`;
+    } else if (item.type === 'summary') {
+        iconSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>`;
+    } else {
+        iconSvg = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+    }
+
+    return `
+        <div class="notification-item ${isUnread ? 'unread' : ''}" data-id="${item._id}">
+            <div class="notification-item-icon ${item.type}">
+                ${iconSvg}
+            </div>
+            <div class="notification-item-content">
+                <div class="notification-item-header">
+                    <h4 class="notification-item-title">${escapeHtml(item.title)}</h4>
+                    <span class="notification-item-time">${dateStr}</span>
+                </div>
+                <p class="notification-item-msg">${escapeHtml(item.message)}</p>
+            </div>
+            <div class="notification-item-actions">
+                ${isUnread ? `
+                    <button type="button" class="mark-read-btn" onclick="markSingleNotificationRead('${item._id}')" title="Mark as read">
+                        <span class="unread-dot"></span>
+                    </button>
+                ` : ''}
+                <button type="button" class="delete-note-btn" onclick="deleteSingleNotification('${item._id}')" title="Delete notification">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function attachNotificationEventListeners() {
+    const radioCards = document.querySelectorAll('.threshold-radio-card');
+    radioCards.forEach(card => {
+        const input = card.querySelector('input[type="radio"]');
+        if (input) {
+            input.addEventListener('change', () => {
+                radioCards.forEach(c => c.classList.remove('selected'));
+                if (input.checked) card.classList.add('selected');
+            });
+        }
+    });
+
+    const saveBtn = document.getElementById('saveNotificationPrefsBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            const budgetAlerts = document.getElementById('budgetAlertsToggle')?.checked ?? true;
+            const categoryAlerts = document.getElementById('categoryAlertsToggle')?.checked ?? true;
+            const monthlySummary = document.getElementById('monthlySummaryToggle')?.checked ?? true;
+            const unusualSpending = document.getElementById('unusualSpendingToggle')?.checked ?? true;
+
+            const selectedRadio = document.querySelector('input[name="alertThreshold"]:checked');
+            const alertThreshold = Number(selectedRadio?.value) || 75;
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = `
+                <svg class="spinner" viewBox="0 0 50 50" style="width: 18px; height: 18px; animation: spin 1s linear infinite; margin-right: 6px;">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
+                </svg>
+                Saving...
+            `;
+
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch('/api/notifications/preferences', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        budgetAlerts,
+                        categoryAlerts,
+                        monthlySummary,
+                        unusualSpending,
+                        alertThreshold
+                    })
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    showToast('Notification preferences updated.', 'success');
+                    setTimeout(() => renderNotifications(), 400);
+                } else {
+                    showToast(data.message || 'Failed to save notification preferences', 'error');
+                }
+            } catch (err) {
+                console.error('Save notification preferences error:', err);
+                showToast('Server error saving notification preferences', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<span>Save Changes</span>';
+            }
+        });
+    }
+
+    const markAllBtn = document.getElementById('markAllReadBtn');
+    if (markAllBtn) {
+        markAllBtn.addEventListener('click', async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch('/api/notifications/read-all', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast('All notifications marked as read', 'success');
+                    renderNotifications();
+                }
+            } catch (err) {
+                console.error('Mark all read error:', err);
+            }
+        });
+    }
+}
+
+window.markSingleNotificationRead = async function(id) {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/notifications/${id}/read`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await res.json();
+        if (data.success) {
+            renderNotifications();
+        }
+    } catch (err) {
+        console.error('Mark read error:', err);
+    }
+};
+
+window.deleteSingleNotification = async function(id) {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/notifications/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await res.json();
+        if (data.success) {
+            showToast('Notification removed.', 'info');
+            renderNotifications();
+        }
+    } catch (err) {
+        console.error('Delete notification error:', err);
+    }
+};
 
 async function renderProfile() {
     STATE.view = 'profile';
@@ -4278,6 +4670,8 @@ function setMonth(m) {
     } else if (STATE.view === 'settings') {
         if (STATE.settingsSubView === 'budget') {
             renderBudgetLimits();
+        } else if (STATE.settingsSubView === 'notifications') {
+            renderNotifications();
         } else {
             renderSettings();
         }
