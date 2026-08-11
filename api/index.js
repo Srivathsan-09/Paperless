@@ -107,6 +107,7 @@ app.use('/api/admin', require('../server/routes/admin'));
 app.use('/api/user', require('../server/routes/user'));
 app.use('/api/profile', require('../server/routes/user'));
 app.use('/api/friends', require('../server/routes/friends'));
+app.use('/api/budget', require('../server/routes/budget'));
 
 /**
  * POST /api/setup/promote-admin

@@ -1211,6 +1211,437 @@ function renderAbout() {
     `;
 }
 
+// --- SETTINGS & BUDGET LIMITS ---
+
+async function fetchBudget() {
+    try {
+        const res = await fetchAPI('/api/budget');
+        if (res && res.success && res.budget) {
+            STATE.budget = res.budget;
+            return res.budget;
+        }
+        const defaultBudget = { overallBudget: 0, categoryBudgets: [] };
+        STATE.budget = defaultBudget;
+        return defaultBudget;
+    } catch (err) {
+        console.error('Error fetching budget settings:', err);
+        return STATE.budget || { overallBudget: 0, categoryBudgets: [] };
+    }
+}
+
+async function saveBudget(budgetData) {
+    try {
+        STATE.budget = budgetData;
+        const res = await fetchAPI('/api/budget', {
+            method: 'PUT',
+            body: JSON.stringify(budgetData)
+        });
+        if (res && res.success) {
+            if (res.budget) STATE.budget = res.budget;
+            showToast('Budget limits saved successfully', 'success');
+            return true;
+        } else {
+            showToast((res && res.message) || 'Failed to save budget limits', 'error');
+            return false;
+        }
+    } catch (err) {
+        console.error('Error saving budget settings:', err);
+        showToast('Unable to save budget limits', 'error');
+        return false;
+    }
+}
+
+async function renderSettings() {
+    STATE.view = 'settings';
+    STATE.activeCategory = null;
+    STATE.activeSubcategory = null;
+
+    HeaderManager.update({
+        showBack: true,
+        onBack: 'renderDashboard',
+        hideMonthSelector: false
+    });
+
+    const main = document.getElementById('mainContent');
+    if (!main) return;
+    main.className = 'view-container settings-view';
+
+    // Immediate Loading State UI
+    main.innerHTML = `
+        <div class="settings-container">
+            <div class="settings-header">
+                <h1 class="settings-title">Settings</h1>
+                <p class="settings-subtitle">Manage your monthly budget limits and spending goals.</p>
+            </div>
+            <div class="settings-card loading-card">
+                <svg class="spinner" viewBox="0 0 50 50" style="width: 32px; height: 32px; animation: spin 1s linear infinite; margin-bottom: 12px; color: var(--primary);">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
+                </svg>
+                <p style="margin:0; font-weight:500; color: var(--text-muted);">Loading settings...</p>
+            </div>
+        </div>
+    `;
+
+    // Fetch month entries, budget settings, and categories in parallel
+    const monthStr = `${STATE.selectedYear}-${String(STATE.selectedMonth + 1).padStart(2, '0')}`;
+    const [entries, budgetData, categoriesData] = await Promise.all([
+        fetchAPI(`/api/entries?month=${monthStr}`).catch(e => {
+            console.error('Failed to fetch entries for budget:', e);
+            return [];
+        }),
+        fetchBudget(),
+        fetchCategories('', true).catch(e => {
+            console.error('Failed to fetch categories for budget:', e);
+            return STATE.categories || [];
+        })
+    ]);
+
+    const categories = (categoriesData && categoriesData.length > 0) ? categoriesData : (STATE.categories || []);
+    if (categories && categories.length > 0) {
+        STATE.categories = categories;
+    }
+
+    const availableCategories = (categories || []).filter(c => c && c.name);
+    availableCategories.sort((a, b) => a.name.localeCompare(b.name));
+
+    const totalMonthSpent = (entries || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    const overallBudget = Number(budgetData?.overallBudget) || 0;
+    const categoryBudgets = Array.isArray(budgetData?.categoryBudgets) ? budgetData.categoryBudgets : [];
+
+    function calculateCategorySpending(catNameOrId) {
+        if (!catNameOrId) return 0;
+        const searchKey = String(catNameOrId).toLowerCase().trim();
+        let total = 0;
+
+        (entries || []).forEach(e => {
+            let isMatch = false;
+
+            if (e.categoryId && String(e.categoryId).toLowerCase() === searchKey) {
+                isMatch = true;
+            }
+
+            if (!isMatch) {
+                let entryCatName = '';
+                if (e.itemName === 'Milk' || e.type === 'milk') {
+                    entryCatName = 'milk';
+                } else if (e.parentCategory) {
+                    entryCatName = e.parentCategory.toLowerCase().trim();
+                } else if (e.categoryId) {
+                    const found = availableCategories.find(c => String(c._id) === String(e.categoryId) || String(c.id) === String(e.categoryId));
+                    if (found) {
+                        entryCatName = (found.parentCategory || found.name).toLowerCase().trim();
+                    }
+                }
+
+                if (!entryCatName && e.categoryName) {
+                    entryCatName = e.categoryName.toLowerCase().trim();
+                }
+
+                if (entryCatName === searchKey) {
+                    isMatch = true;
+                }
+
+                if (!isMatch && e.categoryId) {
+                    const found = availableCategories.find(c => String(c._id) === String(e.categoryId) || String(c.id) === String(e.categoryId));
+                    if (found && found.name.toLowerCase().trim() === searchKey) {
+                        isMatch = true;
+                    }
+                }
+            }
+
+            if (isMatch) {
+                total += Number(e.amount) || 0;
+            }
+        });
+
+        return total;
+    }
+
+    const monthName = MONTHS[STATE.selectedMonth];
+    const yearNum = STATE.selectedYear;
+
+    main.innerHTML = `
+        <div class="settings-container">
+            <div class="settings-header">
+                <h1 class="settings-title">Settings</h1>
+                <p class="settings-subtitle">Manage your monthly budget limits for <span class="settings-month-badge">${monthName} ${yearNum}</span></p>
+            </div>
+
+            <!-- Budget Limits Card -->
+            <div class="settings-card budget-limits-card">
+                <div class="card-header-with-icon">
+                    <div class="card-icon-wrapper">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="settings-card-title">Budget Limits</h2>
+                        <p class="settings-card-desc">Set spending thresholds to track your financial health automatically.</p>
+                    </div>
+                </div>
+
+                <!-- 1. Overall Monthly Budget -->
+                <div class="budget-section">
+                    <h3 class="budget-section-title">1. Overall Monthly Budget</h3>
+                    <div class="budget-overall-grid">
+                        <div class="budget-input-group">
+                            <label for="overallBudgetInput" class="budget-label">Total Monthly Spending Limit (₹)</label>
+                            <div class="currency-input-wrapper">
+                                <span class="currency-symbol">₹</span>
+                                <input type="number" id="overallBudgetInput" class="settings-input" placeholder="e.g. 20000" min="0" value="${overallBudget > 0 ? overallBudget : ''}">
+                            </div>
+                        </div>
+
+                        <!-- Overall Usage Stats -->
+                        <div class="budget-usage-card" id="overallUsageCard">
+                            ${renderBudgetUsageSummary('Overall Spending', totalMonthSpent, overallBudget)}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-divider"></div>
+
+                <!-- 2. Category Budgets -->
+                <div class="budget-section">
+                    <div class="budget-section-header">
+                        <h3 class="budget-section-title">2. Category Budgets</h3>
+                        <p class="budget-section-desc">Set individual monthly spending limits for specific expense categories.</p>
+                    </div>
+
+                    <div id="categoryBudgetsContainer" class="category-budgets-list">
+                        ${categoryBudgets.length === 0 ? `
+                            <div class="empty-category-budgets" id="emptyCategoryBudgetsMsg">
+                                <p>No category budgets configured yet. Click below to add one.</p>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <button type="button" id="addCategoryBudgetBtn" class="add-category-budget-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        + Add Category Budget
+                    </button>
+                </div>
+
+                <div class="settings-divider"></div>
+
+                <!-- 3. Save Changes Button -->
+                <div class="settings-actions">
+                    <button type="button" id="saveBudgetBtn" class="action-btn primary save-budget-btn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    function renderBudgetUsageSummary(title, spent, limit) {
+        const parsedLimit = Number(limit) || 0;
+        const parsedSpent = Number(spent) || 0;
+        const pct = parsedLimit > 0 ? Math.min(100, Math.round((parsedSpent / parsedLimit) * 100)) : 0;
+        const isExceeded = parsedLimit > 0 && parsedSpent > parsedLimit;
+        const isWarning = parsedLimit > 0 && pct >= 80 && !isExceeded;
+        const remaining = parsedLimit > 0 ? Math.max(0, parsedLimit - parsedSpent) : 0;
+
+        let statusClass = 'status-normal';
+        if (isExceeded) statusClass = 'status-exceeded';
+        else if (isWarning) statusClass = 'status-warning';
+
+        return `
+            <div class="usage-header">
+                <span class="usage-title">${title}</span>
+                <span class="usage-badge ${statusClass}">${parsedLimit > 0 ? `${pct}% used` : 'No limit set'}</span>
+            </div>
+            <div class="usage-numbers">
+                <span class="usage-spent">₹${parsedSpent.toLocaleString()}</span>
+                <span class="usage-separator">/</span>
+                <span class="usage-limit">${parsedLimit > 0 ? `₹${parsedLimit.toLocaleString()}` : '₹--'}</span>
+            </div>
+            <div class="budget-progress-track">
+                <div class="budget-progress-fill ${statusClass}" style="width: ${parsedLimit > 0 ? Math.min(100, (parsedSpent / parsedLimit) * 100) : 0}%;"></div>
+            </div>
+            <div class="usage-footer">
+                ${parsedLimit > 0 ? (
+                    isExceeded
+                        ? `<span class="remaining-text exceeded">Exceeded by ₹${(parsedSpent - parsedLimit).toLocaleString()}</span>`
+                        : `<span class="remaining-text">Remaining: ₹${remaining.toLocaleString()}</span>`
+                ) : `<span class="remaining-text muted">Set a limit to start tracking</span>`}
+            </div>
+        `;
+    }
+
+    const container = document.getElementById('categoryBudgetsContainer');
+
+    if (categoryBudgets.length > 0 && container) {
+        categoryBudgets.forEach(item => {
+            const row = createCategoryBudgetRow(item);
+            container.appendChild(row);
+        });
+    }
+
+    function createCategoryBudgetRow(item = { categoryId: '', categoryName: '', limit: '' }) {
+        const div = document.createElement('div');
+        div.className = 'category-budget-row';
+
+        const selCatName = item.categoryName || '';
+        const limitVal = item.limit !== undefined && item.limit !== null && item.limit !== '' ? item.limit : '';
+        const currentSpent = selCatName ? calculateCategorySpending(selCatName) : 0;
+
+        div.innerHTML = `
+            <div class="row-inputs-grid">
+                <div class="budget-input-group">
+                    <label class="budget-label mobile-only">Category</label>
+                    <select class="settings-input budget-category-select">
+                        <option value="">-- Select Category --</option>
+                        ${availableCategories.map(c => `
+                            <option value="${c.name}" data-id="${c._id || c.id || ''}" ${c.name === selCatName ? 'selected' : ''}>
+                                ${c.name}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+                <div class="budget-input-group">
+                    <label class="budget-label mobile-only">Monthly Limit (₹)</label>
+                    <div class="currency-input-wrapper">
+                        <span class="currency-symbol">₹</span>
+                        <input type="number" class="settings-input budget-limit-input" placeholder="e.g. 5000" min="0" value="${limitVal}">
+                    </div>
+                </div>
+                <button type="button" class="budget-remove-btn" title="Remove Category Budget">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="category-usage-preview">
+                ${renderBudgetUsageSummary(selCatName || 'Selected Category', currentSpent, limitVal)}
+            </div>
+        `;
+
+        const selectEl = div.querySelector('.budget-category-select');
+        const limitEl = div.querySelector('.budget-limit-input');
+        const removeBtn = div.querySelector('.budget-remove-btn');
+        const usagePreviewEl = div.querySelector('.category-usage-preview');
+
+        function updateRowPreview() {
+            const catName = selectEl.value;
+            const limit = Number(limitEl.value) || 0;
+            const spent = catName ? calculateCategorySpending(catName) : 0;
+            usagePreviewEl.innerHTML = renderBudgetUsageSummary(catName || 'Selected Category', spent, limit);
+        }
+
+        selectEl.addEventListener('change', updateRowPreview);
+        limitEl.addEventListener('input', updateRowPreview);
+
+        removeBtn.addEventListener('click', () => {
+            div.remove();
+            if (container) {
+                const remainingRows = container.querySelectorAll('.category-budget-row');
+                if (remainingRows.length === 0) {
+                    const emptyMsg = document.createElement('div');
+                    emptyMsg.className = 'empty-category-budgets';
+                    emptyMsg.id = 'emptyCategoryBudgetsMsg';
+                    emptyMsg.innerHTML = '<p>No category budgets configured yet. Click below to add one.</p>';
+                    container.appendChild(emptyMsg);
+                }
+            }
+        });
+
+        return div;
+    }
+
+    const overallInput = document.getElementById('overallBudgetInput');
+    const overallCard = document.getElementById('overallUsageCard');
+
+    if (overallInput && overallCard) {
+        overallInput.addEventListener('input', () => {
+            const val = Number(overallInput.value) || 0;
+            overallCard.innerHTML = renderBudgetUsageSummary('Overall Spending', totalMonthSpent, val);
+        });
+    }
+
+    const addBtn = document.getElementById('addCategoryBudgetBtn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => {
+            const emptyMsg = document.getElementById('emptyCategoryBudgetsMsg');
+            if (emptyMsg) emptyMsg.remove();
+
+            if (container) {
+                const newRow = createCategoryBudgetRow();
+                container.appendChild(newRow);
+                const selectEl = newRow.querySelector('.budget-category-select');
+                if (selectEl) selectEl.focus();
+            }
+        });
+    }
+
+    const saveBtn = document.getElementById('saveBudgetBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            const overallVal = Number(document.getElementById('overallBudgetInput')?.value) || 0;
+
+            const categoryRows = container ? container.querySelectorAll('.category-budget-row') : [];
+            const categoryBudgetsList = [];
+
+            categoryRows.forEach(row => {
+                const selectEl = row.querySelector('.budget-category-select');
+                const limitEl = row.querySelector('.budget-limit-input');
+
+                const catName = selectEl?.value?.trim();
+                const selectedOption = selectEl?.options[selectEl.selectedIndex];
+                const catId = selectedOption ? selectedOption.getAttribute('data-id') || '' : '';
+                const limitNum = Number(limitEl?.value) || 0;
+
+                if (catName && limitNum > 0) {
+                    categoryBudgetsList.push({
+                        categoryId: catId,
+                        categoryName: catName,
+                        limit: limitNum
+                    });
+                }
+            });
+
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = `
+                <svg class="spinner" viewBox="0 0 50 50" style="width: 18px; height: 18px; animation: spin 1s linear infinite; margin-right: 6px;">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
+                </svg>
+                Saving...
+            `;
+
+            const success = await saveBudget({
+                overallBudget: overallVal,
+                categoryBudgets: categoryBudgetsList
+            });
+
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = `
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Save Changes
+            `;
+
+            if (success) {
+                renderSettings();
+            }
+        });
+    }
+}
+
 // --- PROFILE PAGE ---
 
 function escapeHtml(str) {
@@ -2258,8 +2689,8 @@ function closeModule(fallbackId) {
         return;
     }
 
-    // Do not navigate to Dashboard if closing modal from Profile, About, Friends, or custom views
-    if (STATE.view === 'profile' || STATE.view === 'about' || STATE.view === 'friends' || STATE.view === 'friend-details') {
+    // Do not navigate to Dashboard if closing modal from Profile, About, Friends, Settings, or custom views
+    if (STATE.view === 'profile' || STATE.view === 'about' || STATE.view === 'friends' || STATE.view === 'friend-details' || STATE.view === 'settings') {
         return;
     }
 
@@ -3831,6 +4262,8 @@ function setMonth(m) {
         if (container) renderMilkTracker(container);
     } else if (STATE.view === 'analytics') {
         renderAnalytics();
+    } else if (STATE.view === 'settings') {
+        renderSettings();
     }
 
     // Also refresh side panel if active
