@@ -2077,7 +2077,25 @@ window.deleteSingleNotification = async function(id) {
     } catch (err) {
         console.error('Delete notification error:', err);
     }
-};
+function getUserInitials(name) {
+    if (!name || !name.trim()) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) {
+        return parts[0].substring(0, 2).toUpperCase();
+    }
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function formatMemberSince(dateStr) {
+    if (!dateStr) return 'N/A';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return 'N/A';
+        return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } catch (e) {
+        return 'N/A';
+    }
+}
 
 async function renderProfile() {
     STATE.view = 'profile';

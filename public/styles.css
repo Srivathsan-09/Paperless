@@ -322,12 +322,14 @@ body::after {
 
 /* Ensure Back Button doesn't break header-left */
 #headerBackBtn {
-    margin: 0;
+    margin: 0 !important;
+    padding: 0 !important;
     display: flex;
     align-items: center;
     justify-content: center;
     width: 40px;
-    /* Standardize width to match menuBtn slot */
+    height: 40px;
+    flex-shrink: 0;
 }
 
 #headerBackBtn .back-btn-v3 {
@@ -1986,7 +1988,8 @@ textarea:focus {
 }
 
 #headerBackBtn {
-    margin-right: 0.5rem;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .overhaul-header {
