@@ -255,15 +255,26 @@ const HeaderManager = {
         // Store config globally for the handler
         window.currentBackAction = config.onBack;
 
-        // Ensure container exists without destroying layout
+        // Ensure nav slot container exists without destroying layout
+        let navSlot = document.getElementById('headerNavSlot');
+        const headerLeft = document.querySelector('.header-left');
+        if (!navSlot && headerLeft) {
+            navSlot = document.createElement('div');
+            navSlot.id = 'headerNavSlot';
+            navSlot.className = 'header-nav-slot';
+            headerLeft.insertAdjacentElement('afterbegin', navSlot);
+        }
+
         let backBtnContainer = document.getElementById('headerBackBtn');
-        if (!backBtnContainer) {
-            const headerLeft = document.querySelector('.header-left');
-            if (headerLeft) {
-                backBtnContainer = document.createElement('div');
-                backBtnContainer.id = 'headerBackBtn';
-                headerLeft.insertAdjacentElement('afterbegin', backBtnContainer);
-            }
+        if (!backBtnContainer && navSlot) {
+            backBtnContainer = document.createElement('div');
+            backBtnContainer.id = 'headerBackBtn';
+            navSlot.insertAdjacentElement('afterbegin', backBtnContainer);
+        }
+
+        let menuBtn = document.getElementById('menuBtn');
+        if (menuBtn && navSlot && menuBtn.parentElement !== navSlot) {
+            navSlot.appendChild(menuBtn);
         }
 
         const subContentRow = document.getElementById('headerSubContent');
@@ -292,12 +303,23 @@ const HeaderManager = {
         if (monthTrigger) monthTrigger.style.visibility = 'visible';
 
         // Toggle Menu Button visibility when Back button is active (replacing hamburger slot)
-        const menuBtn = document.getElementById('menuBtn');
-        if (menuBtn) {
-            if (config.showBack) {
-                menuBtn.style.display = 'none';
-            } else {
-                menuBtn.style.display = 'flex';
+        if (config.showBack) {
+            if (menuBtn) menuBtn.style.display = 'none';
+            if (backBtnContainer) {
+                backBtnContainer.style.display = 'flex';
+                backBtnContainer.innerHTML = `
+                    <button id="dynamicBackBtn" class="back-btn-v3" onclick="window.handleHeaderBack(event)" aria-label="Go Back" title="Go Back">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <use href="#icon-arrow-left"></use>
+                        </svg>
+                    </button>
+                `;
+            }
+        } else {
+            if (menuBtn) menuBtn.style.display = 'flex';
+            if (backBtnContainer) {
+                backBtnContainer.style.display = 'none';
+                backBtnContainer.innerHTML = '';
             }
         }
 
@@ -313,18 +335,6 @@ const HeaderManager = {
                 row.innerHTML = '';
             }
         };
-
-        // 2. Back Button (Replaces Hamburger Slot)
-        if (config.showBack && backBtnContainer) {
-            backBtnContainer.style.display = 'flex';
-            backBtnContainer.innerHTML = `
-                <button id="dynamicBackBtn" class="back-btn-v3" onclick="window.handleHeaderBack(event)" aria-label="Go Back" title="Go Back">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <use href="#icon-arrow-left"></use>
-                    </svg>
-                </button>
-            `;
-        }
 
         // 3. Sub Content (Tabs/etc)
         safeShow(subContentRow, config.subContentHTML);

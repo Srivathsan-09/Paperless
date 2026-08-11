@@ -320,7 +320,19 @@ body::after {
     font-size: 1rem !important;
 }
 
-/* Ensure Header Back Button is 100% Identical to Hamburger #menuBtn slot */
+/* Dedicated Header Navigation Slot (Hamburger & Back Button share this exact slot) */
+.header-nav-slot {
+    width: 40px !important;
+    height: 40px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
+}
+
 #headerBackBtn {
     margin: 0 !important;
     padding: 0 !important;
@@ -333,11 +345,16 @@ body::after {
     width: 40px !important;
     height: 40px !important;
     flex-shrink: 0 !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
 }
 
 #headerBackBtn .back-btn-v3,
 .dark-theme #headerBackBtn .back-btn-v3,
-.light-theme #headerBackBtn .back-btn-v3 {
+.light-theme #headerBackBtn .back-btn-v3,
+#dynamicBackBtn {
     background: transparent !important;
     padding: 8px !important;
     border: none !important;
@@ -353,18 +370,25 @@ body::after {
     cursor: pointer !important;
     transition: var(--transition) !important;
     margin: 0 !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
 }
 
 #headerBackBtn .back-btn-v3:hover,
 .dark-theme #headerBackBtn .back-btn-v3:hover,
-.light-theme #headerBackBtn .back-btn-v3:hover {
+.light-theme #headerBackBtn .back-btn-v3:hover,
+#dynamicBackBtn:hover {
     background: var(--primary-light) !important;
     color: var(--primary) !important;
     border: none !important;
     box-shadow: none !important;
+    transform: none !important;
 }
 
-#headerBackBtn .back-btn-v3 svg {
+#headerBackBtn .back-btn-v3 svg,
+#dynamicBackBtn svg {
     width: 24px !important;
     height: 24px !important;
     stroke-width: 2.5 !important;
@@ -6019,7 +6043,6 @@ body:has(.login-view) {
     text-align: center;
 }
 
-.back-btn-v3,
 .entry-view-header .back-btn-v3 {
     width: auto;
     height: auto;
