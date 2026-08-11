@@ -1253,12 +1253,61 @@ async function saveBudget(budgetData) {
 
 async function renderSettings() {
     STATE.view = 'settings';
+    STATE.settingsSubView = 'menu';
     STATE.activeCategory = null;
     STATE.activeSubcategory = null;
 
     HeaderManager.update({
         showBack: true,
         onBack: 'renderDashboard',
+        hideMonthSelector: true
+    });
+
+    const main = document.getElementById('mainContent');
+    if (!main) return;
+    main.className = 'view-container settings-view';
+
+    main.innerHTML = `
+        <div class="settings-container">
+            <div class="settings-header">
+                <h1 class="settings-title">Settings</h1>
+                <p class="settings-subtitle">Manage your account preferences and spending limits.</p>
+            </div>
+
+            <div class="settings-menu-list">
+                <div class="settings-menu-item" onclick="renderBudgetLimits()">
+                    <div class="settings-item-left">
+                        <div class="settings-item-icon">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                        </div>
+                        <div class="settings-item-info">
+                            <h3 class="settings-item-title">Budget Limits</h3>
+                            <p class="settings-item-desc">Set overall & category monthly spending limits with automated tracking.</p>
+                        </div>
+                    </div>
+                    <div class="settings-item-arrow">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+async function renderBudgetLimits() {
+    STATE.view = 'settings';
+    STATE.settingsSubView = 'budget';
+    STATE.activeCategory = null;
+    STATE.activeSubcategory = null;
+
+    HeaderManager.update({
+        showBack: true,
+        onBack: 'renderSettings',
         hideMonthSelector: false
     });
 
@@ -1269,15 +1318,21 @@ async function renderSettings() {
     // Immediate Loading State UI
     main.innerHTML = `
         <div class="settings-container">
-            <div class="settings-header">
-                <h1 class="settings-title">Settings</h1>
-                <p class="settings-subtitle">Manage your monthly budget limits and spending goals.</p>
+            <div class="settings-breadcrumb">
+                <button type="button" class="settings-back-btn" onclick="renderSettings()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Back to Settings</span>
+                </button>
             </div>
+
             <div class="settings-card loading-card">
                 <svg class="spinner" viewBox="0 0 50 50" style="width: 32px; height: 32px; animation: spin 1s linear infinite; margin-bottom: 12px; color: var(--primary);">
                     <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
                 </svg>
-                <p style="margin:0; font-weight:500; color: var(--text-muted);">Loading settings...</p>
+                <p style="margin:0; font-weight:500; color: var(--text-muted);">Loading Budget Limits...</p>
             </div>
         </div>
     `;
@@ -1363,9 +1418,19 @@ async function renderSettings() {
 
     main.innerHTML = `
         <div class="settings-container">
+            <div class="settings-breadcrumb">
+                <button type="button" class="settings-back-btn" onclick="renderSettings()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="19" y1="12" x2="5" y2="12"></line>
+                        <polyline points="12 19 5 12 12 5"></polyline>
+                    </svg>
+                    <span>Back to Settings</span>
+                </button>
+            </div>
+
             <div class="settings-header">
-                <h1 class="settings-title">Settings</h1>
-                <p class="settings-subtitle">Manage your monthly budget limits for <span class="settings-month-badge">${monthName} ${yearNum}</span></p>
+                <h1 class="settings-title">Budget Limits</h1>
+                <p class="settings-subtitle">Configure spending thresholds for <span class="settings-month-badge">${monthName} ${yearNum}</span></p>
             </div>
 
             <!-- Budget Limits Card -->
@@ -1378,7 +1443,7 @@ async function renderSettings() {
                         </svg>
                     </div>
                     <div>
-                        <h2 class="settings-card-title">Budget Limits</h2>
+                        <h2 class="settings-card-title">Budget Limits Configuration</h2>
                         <p class="settings-card-desc">Set spending thresholds to track your financial health automatically.</p>
                     </div>
                 </div>
@@ -1637,7 +1702,7 @@ async function renderSettings() {
             `;
 
             if (success) {
-                renderSettings();
+                renderBudgetLimits();
             }
         });
     }
@@ -4264,7 +4329,11 @@ function setMonth(m) {
     } else if (STATE.view === 'analytics') {
         renderAnalytics();
     } else if (STATE.view === 'settings') {
-        renderSettings();
+        if (STATE.settingsSubView === 'budget') {
+            renderBudgetLimits();
+        } else {
+            renderSettings();
+        }
     }
 
     // Also refresh side panel if active

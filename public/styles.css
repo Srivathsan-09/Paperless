@@ -769,7 +769,8 @@ body::after {
     .view-container.about-view,
     .view-container.about-view-wrapper,
     .view-container.profile-view,
-    .view-container.profile-view-wrapper {
+    .view-container.profile-view-wrapper,
+    .view-container.settings-view {
         padding-top: 0.25rem !important;
         /* Minimized gap */
     }
@@ -8154,6 +8155,7 @@ body:has(.login-view) {
    ========================================== */
 
 .settings-view {
+    padding-top: 0.25rem !important;
     padding-bottom: 3rem !important;
 }
 
@@ -8164,11 +8166,109 @@ body:has(.login-view) {
     padding: 0 1rem 2rem 1rem;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
+}
+
+.settings-breadcrumb {
+    margin-bottom: -0.25rem;
+}
+
+.settings-back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    padding: 0;
+    transition: var(--transition);
+}
+
+.settings-back-btn:hover {
+    color: var(--primary-hover);
+    transform: translateX(-2px);
+}
+
+.settings-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.settings-menu-item {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: var(--transition);
+    box-shadow: var(--shadow-soft);
+}
+
+.settings-menu-item:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.settings-item-left {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+}
+
+.settings-item-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    background: var(--primary-light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.settings-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.settings-item-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.settings-item-desc {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.settings-item-arrow {
+    color: var(--text-muted);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.settings-menu-item:hover .settings-item-arrow {
+    color: var(--primary);
+    transform: translateX(3px);
 }
 
 .settings-header {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0;
 }
 
 .settings-title {
