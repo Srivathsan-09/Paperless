@@ -2077,6 +2077,8 @@ window.deleteSingleNotification = async function(id) {
     } catch (err) {
         console.error('Delete notification error:', err);
     }
+};
+
 function getUserInitials(name) {
     if (!name || !name.trim()) return 'U';
     const parts = name.trim().split(/\s+/);
