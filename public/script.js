@@ -1704,17 +1704,10 @@ async function renderNotifications() {
     `;
 
     try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`/api/notifications?month=${STATE.selectedMonth}&year=${STATE.selectedYear}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const data = await fetchAPI(`/api/notifications?month=${STATE.selectedMonth}&year=${STATE.selectedYear}`);
 
-        const data = await res.json();
-        if (!data.success) {
-            throw new Error(data.message || 'Failed to fetch notifications');
+        if (!data || data.success === false) {
+            throw new Error(data?.message || 'Failed to fetch notifications');
         }
 
         const prefs = data.preferences || {
@@ -1983,13 +1976,8 @@ function attachNotificationEventListeners() {
             `;
 
             try {
-                const token = localStorage.getItem('token');
-                const res = await fetch('/api/notifications/preferences', {
+                const data = await fetchAPI('/api/notifications/preferences', {
                     method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify({
                         budgetAlerts,
                         categoryAlerts,
@@ -1999,12 +1987,11 @@ function attachNotificationEventListeners() {
                     })
                 });
 
-                const data = await res.json();
-                if (data.success) {
+                if (data && data.success) {
                     showToast('Notification preferences updated.', 'success');
                     setTimeout(() => renderNotifications(), 400);
                 } else {
-                    showToast(data.message || 'Failed to save notification preferences', 'error');
+                    showToast(data?.message || 'Failed to save notification preferences', 'error');
                 }
             } catch (err) {
                 console.error('Save notification preferences error:', err);
@@ -2020,16 +2007,8 @@ function attachNotificationEventListeners() {
     if (markAllBtn) {
         markAllBtn.addEventListener('click', async () => {
             try {
-                const token = localStorage.getItem('token');
-                const res = await fetch('/api/notifications/read-all', {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await res.json();
-                if (data.success) {
+                const data = await fetchAPI('/api/notifications/read-all', { method: 'PUT' });
+                if (data && data.success) {
                     showToast('All notifications marked as read', 'success');
                     renderNotifications();
                 }
@@ -2042,16 +2021,8 @@ function attachNotificationEventListeners() {
 
 window.markSingleNotificationRead = async function(id) {
     try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`/api/notifications/${id}/read`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await res.json();
-        if (data.success) {
+        const data = await fetchAPI(`/api/notifications/${id}/read`, { method: 'PUT' });
+        if (data && data.success) {
             renderNotifications();
         }
     } catch (err) {
@@ -2061,16 +2032,8 @@ window.markSingleNotificationRead = async function(id) {
 
 window.deleteSingleNotification = async function(id) {
     try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`/api/notifications/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        const data = await res.json();
-        if (data.success) {
+        const data = await fetchAPI(`/api/notifications/${id}`, { method: 'DELETE' });
+        if (data && data.success) {
             showToast('Notification removed.', 'info');
             renderNotifications();
         }

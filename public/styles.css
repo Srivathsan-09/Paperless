@@ -320,42 +320,54 @@ body::after {
     font-size: 1rem !important;
 }
 
-/* Ensure Back Button doesn't break header-left */
+/* Ensure Header Back Button is 100% Identical to Hamburger #menuBtn slot */
 #headerBackBtn {
     margin: 0 !important;
     padding: 0 !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    flex-shrink: 0;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 40px !important;
+    height: 40px !important;
+    flex-shrink: 0 !important;
 }
 
-#headerBackBtn .back-btn-v3 {
+#headerBackBtn .back-btn-v3,
+.dark-theme #headerBackBtn .back-btn-v3,
+.light-theme #headerBackBtn .back-btn-v3 {
     background: transparent !important;
     padding: 8px !important;
     border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
     color: var(--text-main) !important;
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: var(--transition);
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: var(--transition) !important;
+    margin: 0 !important;
 }
 
-#headerBackBtn .back-btn-v3:hover {
+#headerBackBtn .back-btn-v3:hover,
+.dark-theme #headerBackBtn .back-btn-v3:hover,
+.light-theme #headerBackBtn .back-btn-v3:hover {
     background: var(--primary-light) !important;
     color: var(--primary) !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 #headerBackBtn .back-btn-v3 svg {
-    width: 24px;
-    height: 24px;
-    stroke-width: 2.5;
+    width: 24px !important;
+    height: 24px !important;
+    stroke-width: 2.5 !important;
 }
 
 /* Desktop Header Back Button & Flex Layout Positioning */
