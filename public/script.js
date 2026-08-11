@@ -1403,13 +1403,6 @@ async function renderBudgetLimits() {
     const yearNum = STATE.selectedYear;
 
     main.innerHTML = `
-        <div class="settings-container">
-            <div class="settings-header">
-                <h1 class="settings-title">Budget Limits</h1>
-                <p class="settings-subtitle">Configure spending thresholds for <span class="settings-month-badge">${monthName} ${yearNum}</span></p>
-            </div>
-
-    main.innerHTML = `
         <div class="settings-container budget-redesign-container">
             <!-- Hero Header -->
             <div class="settings-header budget-header-v2">
