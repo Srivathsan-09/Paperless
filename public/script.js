@@ -1409,80 +1409,97 @@ async function renderBudgetLimits() {
                 <p class="settings-subtitle">Configure spending thresholds for <span class="settings-month-badge">${monthName} ${yearNum}</span></p>
             </div>
 
-            <!-- Budget Limits Card -->
-            <div class="settings-card budget-limits-card">
-                <div class="card-header-with-icon">
-                    <div class="card-icon-wrapper">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
-                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
-                        </svg>
+    main.innerHTML = `
+        <div class="settings-container budget-redesign-container">
+            <!-- Hero Header -->
+            <div class="settings-header budget-header-v2">
+                <div>
+                    <h1 class="settings-title">Budget & Spending Limits</h1>
+                    <p class="settings-subtitle">Set monthly targets and track category limits for <span class="settings-month-badge">${monthName} ${yearNum}</span></p>
+                </div>
+            </div>
+
+            <!-- 1. Overall Budget Hero Card -->
+            <div class="budget-hero-card">
+                <div class="budget-hero-header">
+                    <div class="budget-hero-title">
+                        <div class="hero-icon-box">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2>Overall Monthly Budget</h2>
+                            <p>Total maximum spending threshold for ${monthName}</p>
+                        </div>
                     </div>
+                </div>
+
+                <div class="budget-hero-body">
+                    <!-- Left: Custom Input with Quick Chips -->
+                    <div class="budget-input-v2">
+                        <label for="overallBudgetInput" class="budget-label-v2">Set Spending Target (₹)</label>
+                        <div class="currency-wrapper-v2">
+                            <span class="currency-symbol-v2">₹</span>
+                            <input type="number" id="overallBudgetInput" class="settings-input-v2" placeholder="20,000" min="0" value="${overallBudget > 0 ? overallBudget : ''}">
+                        </div>
+                        <div class="quick-preset-chips">
+                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=10000; document.getElementById('overallBudgetInput').dispatchEvent(new Event('input'));">₹10k</span>
+                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=20000; document.getElementById('overallBudgetInput').dispatchEvent(new Event('input'));">₹20k</span>
+                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=50000; document.getElementById('overallBudgetInput').dispatchEvent(new Event('input'));">₹50k</span>
+                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=100000; document.getElementById('overallBudgetInput').dispatchEvent(new Event('input'));">₹1 Lakh</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Spending Gauge Card -->
+                    <div class="budget-gauge-v2" id="overallUsageCard">
+                        ${renderBudgetUsageSummary('Overall Spending', totalMonthSpent, overallBudget)}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Category Allocations Section -->
+            <div class="budget-category-section">
+                <div class="category-section-header">
                     <div>
-                        <h2 class="settings-card-title">Budget Limits Configuration</h2>
-                        <p class="settings-card-desc">Set spending thresholds to track your financial health automatically.</p>
+                        <h2 class="category-section-title">Category Limits</h2>
+                        <p class="category-section-desc">Assign specific monthly spending caps for individual categories.</p>
                     </div>
-                </div>
-
-                <!-- 1. Overall Monthly Budget -->
-                <div class="budget-section">
-                    <h3 class="budget-section-title">1. Overall Monthly Budget</h3>
-                    <div class="budget-overall-grid">
-                        <div class="budget-input-card">
-                            <label for="overallBudgetInput" class="budget-label">Total Monthly Spending Limit (₹)</label>
-                            <div class="currency-input-wrapper">
-                                <span class="currency-symbol">₹</span>
-                                <input type="number" id="overallBudgetInput" class="settings-input" placeholder="e.g. 20000" min="0" value="${overallBudget > 0 ? overallBudget : ''}">
-                            </div>
-                            <p class="budget-input-hint">Set your max spending threshold for the current month.</p>
-                        </div>
-
-                        <!-- Overall Usage Stats -->
-                        <div class="budget-usage-card" id="overallUsageCard">
-                            ${renderBudgetUsageSummary('Overall Spending', totalMonthSpent, overallBudget)}
-                        </div>
-                    </div>
-                </div>
-
-                <div class="settings-divider"></div>
-
-                <!-- 2. Category Budgets -->
-                <div class="budget-section">
-                    <div class="budget-section-header">
-                        <h3 class="budget-section-title">2. Category Budgets</h3>
-                        <p class="budget-section-desc">Set individual monthly spending limits for specific expense categories.</p>
-                    </div>
-
-                    <div id="categoryBudgetsContainer" class="category-budgets-list">
-                        ${categoryBudgets.length === 0 ? `
-                            <div class="empty-category-budgets" id="emptyCategoryBudgetsMsg">
-                                <p>No category budgets configured yet. Click below to add one.</p>
-                            </div>
-                        ` : ''}
-                    </div>
-
-                    <button type="button" id="addCategoryBudgetBtn" class="add-category-budget-btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <button type="button" id="addCategoryBudgetBtn" class="add-cat-btn-v2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        + Add Category Budget
+                        <span>Add Category Limit</span>
                     </button>
                 </div>
 
-                <div class="settings-divider"></div>
-
-                <!-- 3. Save Changes Button -->
-                <div class="settings-actions">
-                    <button type="button" id="saveBudgetBtn" class="action-btn primary save-budget-btn">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                            <polyline points="7 3 7 8 15 8"></polyline>
-                        </svg>
-                        Save Changes
-                    </button>
+                <div id="categoryBudgetsContainer" class="category-budgets-list-v2">
+                    ${categoryBudgets.length === 0 ? `
+                        <div class="empty-category-v2" id="emptyCategoryBudgetsMsg">
+                            <div class="empty-icon-v2">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                </svg>
+                            </div>
+                            <h3>No Category Limits Configured</h3>
+                            <p>Set specific caps on Food, Transport, Shopping, or Utilities to track expenses automatically.</p>
+                        </div>
+                    ` : ''}
                 </div>
+            </div>
+
+            <!-- Sticky Save Bar -->
+            <div class="budget-save-footer">
+                <button type="button" id="saveBudgetBtn" class="save-budget-btn-v2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    <span>Save Changes</span>
+                </button>
             </div>
         </div>
     `;
@@ -1592,9 +1609,17 @@ async function renderBudgetLimits() {
                 const remainingRows = container.querySelectorAll('.category-budget-row');
                 if (remainingRows.length === 0) {
                     const emptyMsg = document.createElement('div');
-                    emptyMsg.className = 'empty-category-budgets';
+                    emptyMsg.className = 'empty-category-v2';
                     emptyMsg.id = 'emptyCategoryBudgetsMsg';
-                    emptyMsg.innerHTML = '<p>No category budgets configured yet. Click below to add one.</p>';
+                    emptyMsg.innerHTML = `
+                        <div class="empty-icon-v2">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                            </svg>
+                        </div>
+                        <h3>No Category Limits Configured</h3>
+                        <p>Set specific caps on Food, Transport, Shopping, or Utilities to track expenses automatically.</p>
+                    `;
                     container.appendChild(emptyMsg);
                 }
             }
