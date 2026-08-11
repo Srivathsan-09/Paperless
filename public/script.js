@@ -262,7 +262,6 @@ const HeaderManager = {
             if (headerLeft) {
                 backBtnContainer = document.createElement('div');
                 backBtnContainer.id = 'headerBackBtn';
-                // Insert as first child
                 headerLeft.insertAdjacentElement('afterbegin', backBtnContainer);
             }
         }
@@ -292,7 +291,7 @@ const HeaderManager = {
         if (logo) logo.style.display = 'block';
         if (monthTrigger) monthTrigger.style.visibility = 'visible';
 
-        // Toggle Menu Button visibility based on Back Button presence on Mobile
+        // Toggle Menu Button visibility ONLY on Mobile when Back button is active
         const menuBtn = document.getElementById('menuBtn');
         if (menuBtn) {
             if (isMobile && config.showBack) {
@@ -317,17 +316,40 @@ const HeaderManager = {
 
         // 2. Back Button
         if (config.showBack && backBtnContainer) {
-            backBtnContainer.style.display = 'block';
-            // Use global handler
-            backBtnContainer.innerHTML = `
-                <button id="dynamicBackBtn" class="back-btn-v3" onclick="window.handleHeaderBack(event)">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <use href="#icon-arrow-left"></use>
-                    </svg>
-                </button>
-            `;
+            backBtnContainer.style.display = 'flex';
 
-            // Removed unconditional hiding of month selector on mobile
+            if (isMobile) {
+                // Mobile icon-only back button
+                backBtnContainer.innerHTML = `
+                    <button id="dynamicBackBtn" class="back-btn-v3" onclick="window.handleHeaderBack(event)">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <use href="#icon-arrow-left"></use>
+                        </svg>
+                    </button>
+                `;
+            } else {
+                // Desktop dynamic text back link button
+                let labelText = config.backText;
+                if (!labelText) {
+                    if (config.onBack === 'renderSettings') {
+                        labelText = 'Back to Settings';
+                    } else if (config.onBack === 'renderFriends') {
+                        labelText = 'Back to Settlements';
+                    } else {
+                        labelText = 'Back to Home';
+                    }
+                }
+
+                backBtnContainer.innerHTML = `
+                    <button id="dynamicBackBtn" class="header-desktop-back-btn" onclick="window.handleHeaderBack(event)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        <span>${labelText}</span>
+                    </button>
+                `;
+            }
         }
 
         // 3. Sub Content (Tabs/etc)
@@ -1318,16 +1340,6 @@ async function renderBudgetLimits() {
     // Immediate Loading State UI
     main.innerHTML = `
         <div class="settings-container">
-            <div class="settings-breadcrumb">
-                <button type="button" class="settings-back-btn" onclick="renderSettings()">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    <span>Back to Settings</span>
-                </button>
-            </div>
-
             <div class="settings-card loading-card">
                 <svg class="spinner" viewBox="0 0 50 50" style="width: 32px; height: 32px; animation: spin 1s linear infinite; margin-bottom: 12px; color: var(--primary);">
                     <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
@@ -1418,16 +1430,6 @@ async function renderBudgetLimits() {
 
     main.innerHTML = `
         <div class="settings-container">
-            <div class="settings-breadcrumb">
-                <button type="button" class="settings-back-btn" onclick="renderSettings()">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="19" y1="12" x2="5" y2="12"></line>
-                        <polyline points="12 19 5 12 12 5"></polyline>
-                    </svg>
-                    <span>Back to Settings</span>
-                </button>
-            </div>
-
             <div class="settings-header">
                 <h1 class="settings-title">Budget Limits</h1>
                 <p class="settings-subtitle">Configure spending thresholds for <span class="settings-month-badge">${monthName} ${yearNum}</span></p>
