@@ -8499,15 +8499,9 @@ body:has(.login-view) {
 
 .budget-hero-body {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 1.5rem;
     align-items: stretch;
-}
-
-@media (max-width: 680px) {
-    .budget-hero-body {
-        grid-template-columns: 1fr;
-    }
 }
 
 /* Custom Currency Input + Quick Chips */

@@ -1430,7 +1430,7 @@ async function renderBudgetLimits() {
                 </div>
 
                 <div class="budget-hero-body">
-                    <!-- Left: Custom Input with Quick Chips -->
+                    <!-- Custom Input with Quick Chips -->
                     <div class="budget-input-v2">
                         <label for="overallBudgetInput" class="budget-label-v2">Set Spending Target (₹)</label>
                         <div class="currency-wrapper-v2">
@@ -1438,16 +1438,11 @@ async function renderBudgetLimits() {
                             <input type="number" id="overallBudgetInput" class="settings-input-v2" placeholder="20,000" min="0" value="${overallBudget > 0 ? overallBudget : ''}">
                         </div>
                         <div class="quick-preset-chips">
-                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=10000; document.getElementById('overallBudgetInput').dispatchEvent(new Event('input'));">₹10k</span>
-                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=20000; document.getElementById('overallBudgetInput').dispatchEvent(new Event('input'));">₹20k</span>
-                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=50000; document.getElementById('overallBudgetInput').dispatchEvent(new Event('input'));">₹50k</span>
-                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=100000; document.getElementById('overallBudgetInput').dispatchEvent(new Event('input'));">₹1 Lakh</span>
+                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=10000;">₹10k</span>
+                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=20000;">₹20k</span>
+                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=50000;">₹50k</span>
+                            <span class="preset-chip" onclick="document.getElementById('overallBudgetInput').value=100000;">₹1 Lakh</span>
                         </div>
-                    </div>
-
-                    <!-- Right: Live Spending Gauge Card -->
-                    <div class="budget-gauge-v2" id="overallUsageCard">
-                        ${renderBudgetUsageSummary('Overall Spending', totalMonthSpent, overallBudget)}
                     </div>
                 </div>
             </div>
