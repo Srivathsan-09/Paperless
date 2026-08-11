@@ -1459,11 +1459,6 @@ async function renderBudgetLimits() {
                                 <input type="number" id="overallBudgetInput" class="settings-input-v2" placeholder="20,000" min="0" value="${overallBudget > 0 ? overallBudget : ''}">
                             </div>
                             <button type="button" id="saveSpendingTargetBtn" class="save-target-btn-v2" title="Save Spending Target">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                    <polyline points="7 3 7 8 15 8"></polyline>
-                                </svg>
                                 <span>Save Target</span>
                             </button>
                         </div>
@@ -1511,11 +1506,6 @@ async function renderBudgetLimits() {
             <!-- Sticky Save Bar -->
             <div class="budget-save-footer">
                 <button type="button" id="saveBudgetBtn" class="save-budget-btn-v2">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                        <polyline points="7 3 7 8 15 8"></polyline>
-                    </svg>
                     <span>Save Changes</span>
                 </button>
             </div>
@@ -1645,14 +1635,7 @@ async function renderBudgetLimits() {
             });
 
             saveTargetBtn.disabled = false;
-            saveTargetBtn.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                    <polyline points="7 3 7 8 15 8"></polyline>
-                </svg>
-                <span>Save Target</span>
-            `;
+            saveTargetBtn.innerHTML = `<span>Save Target</span>`;
 
             if (success) {
                 renderBudgetLimits();
@@ -1700,14 +1683,7 @@ async function renderBudgetLimits() {
             });
 
             saveBtn.disabled = false;
-            saveBtn.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                    <polyline points="7 3 7 8 15 8"></polyline>
-                </svg>
-                Save Changes
-            `;
+            saveBtn.innerHTML = `Save Changes`;
 
             if (success) {
                 renderBudgetLimits();
